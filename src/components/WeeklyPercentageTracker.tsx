@@ -74,24 +74,35 @@ const WeeklyPercentageTracker: React.FC = () => {
     prevWeek.setDate(prevWeek.getDate() - 7);
     setCurrentWeek(prevWeek);
     
-    // Check if we have stored entries for the previous week
-    const prevWeekKey = formatWeekRange(prevWeek);
-    const previousWeekEntries = previousSubmissions[prevWeekKey];
-    
-    // Check if the previous week was submitted
-    setIsSubmitted(!!previousWeekEntries);
-    setIsModified(false);
-    
-    // If we have previous entries for this week, use them
-    if (previousWeekEntries && previousWeekEntries.length > 0) {
-      setEntries(previousWeekEntries.map(entry => ({
+    // If pinned, keep the current entries
+    if (isPinned) {
+      // Just clone the current entries with new IDs
+      setEntries(entries.map(entry => ({
         ...entry,
         id: Date.now() + Math.random() // Generate new IDs
       })));
+      setIsSubmitted(false);
+      setIsModified(false);
     } else {
-      // Otherwise start with a blank slate
-      setEntries([{ id: Date.now(), projectId: "", percentage: "100", isManuallySet: false }]);
-      setManuallyEditedIds(new Set());
+      // Check if we have stored entries for the previous week
+      const prevWeekKey = formatWeekRange(prevWeek);
+      const previousWeekEntries = previousSubmissions[prevWeekKey];
+      
+      // Check if the previous week was submitted
+      setIsSubmitted(!!previousWeekEntries);
+      setIsModified(false);
+      
+      // If we have previous entries for this week, use them
+      if (previousWeekEntries && previousWeekEntries.length > 0) {
+        setEntries(previousWeekEntries.map(entry => ({
+          ...entry,
+          id: Date.now() + Math.random() // Generate new IDs
+        })));
+      } else {
+        // Otherwise start with a blank slate
+        setEntries([{ id: Date.now(), projectId: "", percentage: "100", isManuallySet: false }]);
+        setManuallyEditedIds(new Set());
+      }
     }
   };
 
@@ -440,11 +451,12 @@ const WeeklyPercentageTracker: React.FC = () => {
               variant="ghost" 
               onClick={() => setIsPinned(!isPinned)} 
               className={`mr-2 ${isPinned ? 'text-red-500' : 'text-slate-400'}`}
+              title={isPinned ? "Unpin current allocations" : "Pin current allocations"}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L12 16" />
-                <path d="M19 9C19 11.2091 15.866 13 12 13C8.13401 13 5 11.2091 5 9C5 6.79086 8.13401 5 12 5C15.866 5 19 6.79086 19 9Z" />
-                <path d="M12 22C9.79086 22 8 20.2091 8 18C8 15.7909 9.79086 14 12 14C14.2091 14 16 15.7909 16 18C16 20.2091 14.2091 22 12 22Z" />
+                <circle cx="12" cy="7" r="4" />
+                <path d="M12 11L12 19" />
+                <path d="M10 19L14 19" />
               </svg>
             </Button>
             <span className="text-lg font-semibold text-slate-800">

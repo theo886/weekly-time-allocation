@@ -6,6 +6,7 @@ interface ButtonProps {
   disabled?: boolean;
   className?: string;
   variant?: 'default' | 'ghost' | 'outline';
+  title?: string;
 }
 
 export const Button = ({ 
@@ -13,7 +14,8 @@ export const Button = ({
   onClick, 
   disabled, 
   className, 
-  variant = 'default' 
+  variant = 'default',
+  title
 }: ButtonProps) => {
   const baseClass = 'rounded-md font-medium';
   
@@ -27,6 +29,7 @@ export const Button = ({
     <button 
       onClick={onClick} 
       disabled={disabled}
+      title={title}
       className={`${baseClass} ${variantClasses[variant]} ${className || ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       {children}
