@@ -29,6 +29,7 @@ jobs:
           output_location: "build" # Built app content directory
           app_build_command: "npm run build"
           api_build_command: "npm run build --if-present"
+          action: "upload"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
