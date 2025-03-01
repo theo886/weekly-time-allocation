@@ -447,21 +447,26 @@ const WeeklyPercentageTracker: React.FC = () => {
         
         <CardContent>
           <div className="flex items-center justify-center mb-3">
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsPinned(!isPinned)} 
-              className={`mr-2 ${isPinned ? 'text-red-500' : 'text-slate-400'}`}
-              title={isPinned ? "Unpin current allocations" : "Pin current allocations"}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 3l5 5-4 4-5-5z" />
-                <path d="M10 9L4 15" />
-                <path d="M9 15l-4-4" />
-                <path d="M14.5 4.5l-10 10" />
-                <path d="M15 10l-5 5" />
-                <path d="M4 20l5-1-4-4z" />
-              </svg>
-            </Button>
+          <Button 
+  variant="ghost" 
+  onClick={() => setIsPinned(!isPinned)} 
+  className={`mr-2 ${isPinned ? 'text-red-500' : 'text-slate-400'}`}
+  title={isPinned ? "Unpin current allocations" : "Pin current allocations"}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+  >
+    <path d="M21 10c0 5.523-9 13-9 13S3 15.523 3 10a9 9 0 1 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+</Button>
             <span className="text-lg font-semibold text-slate-800">
               Week of {formatWeekRange(currentWeek)}
             </span>
