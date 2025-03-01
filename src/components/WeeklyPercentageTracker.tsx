@@ -439,21 +439,13 @@ const WeeklyPercentageTracker: React.FC = () => {
             <Button 
               variant="ghost" 
               onClick={() => setIsPinned(!isPinned)} 
-              className={`mr-2 ${isPinned ? 'text-amber-600' : 'text-slate-400'}`}
+              className={`mr-2 ${isPinned ? 'text-red-500' : 'text-slate-400'}`}
             >
-              {isPinned ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M18 4v2a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M8 14h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="19" r="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="17" x2="12" y2="22"></line>
-                  <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0-4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
-                </svg>
-              )}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L12 16" />
+                <path d="M19 9C19 11.2091 15.866 13 12 13C8.13401 13 5 11.2091 5 9C5 6.79086 8.13401 5 12 5C15.866 5 19 6.79086 19 9Z" />
+                <path d="M12 22C9.79086 22 8 20.2091 8 18C8 15.7909 9.79086 14 12 14C14.2091 14 16 15.7909 16 18C16 20.2091 14.2091 22 12 22Z" />
+              </svg>
             </Button>
             <span className="text-lg font-semibold text-slate-800">
               Week of {formatWeekRange(currentWeek)}
