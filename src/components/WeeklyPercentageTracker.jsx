@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Calendar, Plus, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
@@ -88,98 +88,100 @@ const WeeklyPercentageTracker = () => {
   // Create a formatted week ID for database storage
   const weekId = `${currentWeek.getFullYear()}-${(currentWeek.getMonth() + 1).toString().padStart(2, '0')}-${currentWeek.getDate().toString().padStart(2, '0')}`;
 
+  // Create a memoized function to handle loading timesheets
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleLoadTimesheets = useCallback(async () => {
+    // Check if we have userInfo and a valid user ID
+    if (!userInfo || !userInfo.userId) {
+      console.log('No user info available, skipping timesheet fetch');
+      return;
+    }
+    
+    // Verify that the user ID is consistent
+    if (userIdRef.current !== userInfo.userId) {
+      console.warn(`User ID mismatch: ref has ${userIdRef.current} but userInfo has ${userInfo.userId}`);
+      return;
+    }
+    
+    // Prevent unnecessary fetches
+    if (isLoadingRef.current) {
+      console.log('Already loading, skipping duplicate fetch');
+      return;
+    }
+    
+    console.log('Loading timesheets for week:', weekId, 'and user:', userInfo.userId);
+    
+    // Update both the state and the ref
+    setIsLoading(true);
+    isLoadingRef.current = true;
+    
+    setEntryErrors({});
+    setSaveError(null);
+    setSaveSuccess(false);
+    
+    try {
+      const timesheets = await getTimesheets(userInfo);
+      
+      // If the user ID changed during the fetch, discard the results
+      if (userIdRef.current !== userInfo.userId) {
+        console.warn('User ID changed during fetch, discarding results');
+        return;
+      }
+      
+      // Log all received timesheets for debugging
+      console.log('All timesheets received:', timesheets.map(ts => ({ 
+        id: ts.id,
+        weekStarting: ts.weekStarting,
+        userId: ts.userId 
+      })));
+      
+      // Find the timesheet for the current week
+      const existingTimesheet = timesheets.find(ts => ts.weekStarting === weekId);
+      
+      if (existingTimesheet && existingTimesheet.entries && Array.isArray(existingTimesheet.entries)) {
+        console.log('Found existing timesheet for week:', weekId);
+        setTimesheetExists(true);
+        setExistingTimesheetId(existingTimesheet.id);
+        
+        // Map the entries from the existing timesheet
+        const savedEntries = existingTimesheet.entries.map((entry, index) => ({
+          id: index + 1,
+          projectId: entry.projectId,
+          percentage: entry.percentage,
+          isManuallySet: true
+        }));
+        
+        setEntries(savedEntries.length > 0 ? savedEntries : [{ 
+          id: Date.now(), 
+          projectId: "", 
+          percentage: "100", 
+          isManuallySet: false 
+        }]);
+      } else {
+        console.log('No existing timesheet found for week:', weekId);
+        // Reset to default state for a new week
+        setTimesheetExists(false);
+        setExistingTimesheetId(null);
+        setEntries([{ id: Date.now(), projectId: "", percentage: "100", isManuallySet: false }]);
+      }
+    } catch (error) {
+      console.error("Error loading timesheets:", error);
+    } finally {
+      // Update both the state and the ref
+      setIsLoading(false);
+      isLoadingRef.current = false;
+    }
+  }, [userInfo, weekId, getTimesheets]);
+
   // Load existing timesheet data when the week changes or user logs in
   useEffect(() => {
-    const loadTimesheets = async () => {
-      // Check if we have userInfo and a valid user ID
-      if (!userInfo || !userInfo.userId) {
-        console.log('No user info available, skipping timesheet fetch');
-        return;
-      }
-      
-      // Verify that the user ID is consistent
-      if (userIdRef.current !== userInfo.userId) {
-        console.warn(`User ID mismatch: ref has ${userIdRef.current} but userInfo has ${userInfo.userId}`);
-        return;
-      }
-      
-      // Prevent unnecessary fetches
-      if (isLoadingRef.current) {
-        console.log('Already loading, skipping duplicate fetch');
-        return;
-      }
-      
-      console.log('Loading timesheets for week:', weekId, 'and user:', userInfo.userId);
-      
-      // Update both the state and the ref
-      setIsLoading(true);
-      isLoadingRef.current = true;
-      
-      setEntryErrors({});
-      setSaveError(null);
-      setSaveSuccess(false);
-      
-      try {
-        const timesheets = await getTimesheets(userInfo);
-        
-        // If the user ID changed during the fetch, discard the results
-        if (userIdRef.current !== userInfo.userId) {
-          console.warn('User ID changed during fetch, discarding results');
-          return;
-        }
-        
-        // Log all received timesheets for debugging
-        console.log('All timesheets received:', timesheets.map(ts => ({ 
-          id: ts.id,
-          weekStarting: ts.weekStarting,
-          userId: ts.userId 
-        })));
-        
-        // Find the timesheet for the current week
-        const existingTimesheet = timesheets.find(ts => ts.weekStarting === weekId);
-        
-        if (existingTimesheet && existingTimesheet.entries && Array.isArray(existingTimesheet.entries)) {
-          console.log('Found existing timesheet for week:', weekId);
-          setTimesheetExists(true);
-          setExistingTimesheetId(existingTimesheet.id);
-          
-          // Map the entries from the existing timesheet
-          const savedEntries = existingTimesheet.entries.map((entry, index) => ({
-            id: index + 1,
-            projectId: entry.projectId,
-            percentage: entry.percentage,
-            isManuallySet: true
-          }));
-          
-          setEntries(savedEntries.length > 0 ? savedEntries : [{ 
-            id: Date.now(), 
-            projectId: "", 
-            percentage: "100", 
-            isManuallySet: false 
-          }]);
-        } else {
-          console.log('No existing timesheet found for week:', weekId);
-          // Reset to default state for a new week
-          setTimesheetExists(false);
-          setExistingTimesheetId(null);
-          setEntries([{ id: Date.now(), projectId: "", percentage: "100", isManuallySet: false }]);
-        }
-      } catch (error) {
-        console.error("Error loading timesheets:", error);
-      } finally {
-        // Update both the state and the ref
-        setIsLoading(false);
-        isLoadingRef.current = false;
-      }
-    };
-    
     // Only load timesheets if we have a valid user
     if (userInfo && userInfo.userId && userIdRef.current === userInfo.userId) {
-      loadTimesheets();
+      handleLoadTimesheets();
     } else {
       console.log('No valid user ID or ID mismatch, skipping timesheet load');
     }
-  }, [currentWeek, weekId, userIdRef.current]); // Use userIdRef.current instead of userInfo
+  }, [currentWeek, userInfo, weekId, handleLoadTimesheets]);
 
   // Validate total percentage whenever entries change
   useEffect(() => {
