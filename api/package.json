@@ -4,6 +4,9 @@
   "description": "Azure Functions API for the Weekly Time Allocation app",
   "scripts": {
     "start": "func start",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prestart": "npm run build",
     "test": "echo \"No tests specified\""
   },
   "dependencies": {
