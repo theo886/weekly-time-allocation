@@ -93,24 +93,9 @@ export async function getTimesheets(userInfo) {
     console.log('[TIMESHEET-DEBUG] Using cache key:', cacheKey);
     
     // Check for cached data to prevent excessive fetching
-    const cachedData = sessionStorage.getItem(cacheKey);
-    if (cachedData) {
-      try {
-        const { timesheets, timestamp } = JSON.parse(cachedData);
-        const cacheAge = Date.now() - timestamp;
-        
-        // If cache is less than 30 seconds old, use it
-        if (cacheAge < 30000) {
-          console.log(`[TIMESHEET-DEBUG] Using cached timesheets for user ${userInfo.userId}, cache age: ${cacheAge}ms`);
-          console.log('[TIMESHEET-DEBUG] Cached timesheets:', JSON.stringify(timesheets));
-          return timesheets;
-        }
-      } catch (e) {
-        console.warn('[TIMESHEET-DEBUG] Error parsing cached timesheet data:', e);
-        sessionStorage.removeItem(cacheKey);
-      }
-    }
-    
+    sessionStorage.removeItem(cacheKey); // Explicitly clear cache before fetching
+    console.log('[TIMESHEET-DEBUG] Cleared cache explicitly for key:', cacheKey);
+
     const headers = await getAuthHeaders();
     console.log('[TIMESHEET-DEBUG] Auth headers obtained:', headers.Authorization ? 'Authorization header present' : 'No Authorization header');
     
