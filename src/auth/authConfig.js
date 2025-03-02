@@ -52,7 +52,7 @@ export const protectedResources = {
   timeSheetApi: {
     endpoint: window.location.hostname === 'localhost' 
       ? 'http://localhost:7071/api' 
-      : '/api',
+      : '/api',  // This is correct as a relative path for a Static Web App
     scopes: ["User.Read"] // Simplified scope that should work
   }
 }; 

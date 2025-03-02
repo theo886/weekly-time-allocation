@@ -126,29 +126,59 @@ export async function getTimesheets(userInfo) {
     console.log('[TIMESHEET-DEBUG] Calling API URL:', apiUrl);
     
     try {
-      const response = await fetch(apiUrl, {
-        headers,
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      console.log('[TIMESHEET-DEBUG] API response status:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        throw new Error(`Error fetching timesheets: ${response.statusText}`);
+      // Add a try-catch specifically for fetch to better handle CORS errors
+      try {
+        const response = await fetch(apiUrl, {
+          headers,
+          signal: controller.signal,
+          // Add explicit mode credentials
+          mode: 'cors',
+          credentials: 'same-origin'
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('[TIMESHEET-DEBUG] API response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching timesheets: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('[TIMESHEET-DEBUG] Raw API response:', JSON.stringify(data));
+        
+        // Cache the result
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          timesheets: data.timesheets || [],
+          timestamp: Date.now()
+        }));
+        
+        console.log('[TIMESHEET-DEBUG] Returning timesheets:', JSON.stringify(data.timesheets || []));
+        return data.timesheets || [];
+      } catch (corsError) {
+        console.error('[TIMESHEET-DEBUG] Possible CORS or network error:', corsError);
+        
+        // If we get a CORS error and we're in production, try with a relative URL
+        if (window.location.hostname !== 'localhost' && apiUrl.includes('https://')) {
+          console.log('[TIMESHEET-DEBUG] Attempting fallback to relative URL due to CORS issue');
+          const relativeUrl = `/api/timesheets?userId=${userInfo.userId}`;
+          
+          const relativeResponse = await fetch(relativeUrl, {
+            headers,
+            signal: controller.signal
+          });
+          
+          if (!relativeResponse.ok) {
+            throw new Error(`Error fetching timesheets with relative URL: ${relativeResponse.statusText}`);
+          }
+          
+          const data = await relativeResponse.json();
+          console.log('[TIMESHEET-DEBUG] Relative URL API response:', JSON.stringify(data));
+          
+          return data.timesheets || [];
+        }
+        
+        throw corsError;
       }
-      
-      const data = await response.json();
-      console.log('[TIMESHEET-DEBUG] Raw API response:', JSON.stringify(data));
-      
-      // Cache the result
-      sessionStorage.setItem(cacheKey, JSON.stringify({
-        timesheets: data.timesheets || [],
-        timestamp: Date.now()
-      }));
-      
-      console.log('[TIMESHEET-DEBUG] Returning timesheets:', JSON.stringify(data.timesheets || []));
-      return data.timesheets || [];
     } catch (fetchError) {
       if (fetchError.name === 'AbortError') {
         console.warn('Fetch request timed out after 10 seconds');
