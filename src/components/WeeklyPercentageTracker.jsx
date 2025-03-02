@@ -171,7 +171,7 @@ const WeeklyPercentageTracker = () => {
       setIsLoading(false);
       isLoadingRef.current = false;
     }
-  }, [userInfo, weekId, getTimesheets]);
+  }, [userInfo, weekId]);
 
   // Load existing timesheet data when the week changes or user logs in
   useEffect(() => {
