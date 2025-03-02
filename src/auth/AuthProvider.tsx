@@ -60,8 +60,12 @@ const AuthenticationHandler: React.FC<{ children: ReactNode }> = ({ children }) 
     if (!isAuthenticated && inProgress === InteractionStatus.None) {
       const accounts = instance.getAllAccounts();
       if (accounts.length > 0) {
-        instance.setActiveAccount(accounts[0]);
-        console.log("Set active account from handler:", accounts[0]);
+        // Check if there's already an active account to avoid unnecessary updates
+        const activeAccount = instance.getActiveAccount();
+        if (!activeAccount) {
+          instance.setActiveAccount(accounts[0]);
+          console.log("Set active account from handler:", accounts[0]);
+        }
       }
     }
   }, [instance, inProgress, isAuthenticated]);

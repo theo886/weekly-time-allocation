@@ -5,9 +5,21 @@ import { protectedResources } from '../auth/authConfig';
 // Base URL for API requests
 const API_BASE_URL = protectedResources.timeSheetApi.endpoint;
 
+// Token cache to avoid excessive requests
+let tokenCache: {
+  token: string;
+  expiresAt: number;
+} | null = null;
+
 // Get the authentication token
 const getToken = async (): Promise<string | null> => {
   try {
+    // Check if we have a valid cached token
+    if (tokenCache && tokenCache.expiresAt > Date.now()) {
+      console.log("Using cached token");
+      return tokenCache.token;
+    }
+
     const account = msalInstance.getActiveAccount();
     if (!account) {
       console.warn('No active account! Proceeding without authentication token.');
@@ -19,6 +31,16 @@ const getToken = async (): Promise<string | null> => {
         scopes: protectedResources.timeSheetApi.scopes,
         account: account
       });
+      
+      // Cache the token with expiration (subtract 5 minutes for safety)
+      const expiresInMs = tokenResponse.expiresOn ? 
+        (tokenResponse.expiresOn.getTime() - Date.now() - 5 * 60 * 1000) : 
+        (3600 * 1000); // Default to 1 hour if no expiration
+
+      tokenCache = {
+        token: tokenResponse.accessToken,
+        expiresAt: Date.now() + expiresInMs
+      };
       
       return tokenResponse.accessToken;
     } catch (tokenError) {
