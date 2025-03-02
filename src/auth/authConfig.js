@@ -1,7 +1,7 @@
-import { Configuration, LogLevel } from "@azure/msal-browser";
+import { LogLevel } from "@azure/msal-browser";
 
 // MSAL configuration
-export const msalConfig: Configuration = {
+export const msalConfig = {
   auth: {
     clientId: "5ad4bc33-fb98-47c5-a808-a254f7a37ded",
     authority: "https://login.microsoftonline.com/43e5dc39-9e1f-4979-b674-674ace58ff9a",
@@ -15,7 +15,7 @@ export const msalConfig: Configuration = {
   },
   system: {
     loggerOptions: {
-      loggerCallback: (level: LogLevel, message: string, containsPii: boolean) => {
+      loggerCallback: (level, message, containsPii) => {
         if (containsPii) {
           return;
         }

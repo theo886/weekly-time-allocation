@@ -1,4 +1,3 @@
-import { TimeSheet, UserInfo } from '../models/types';
 import { msalInstance } from '../auth/AuthProvider';
 import { protectedResources } from '../auth/authConfig';
 
@@ -6,13 +5,10 @@ import { protectedResources } from '../auth/authConfig';
 const API_BASE_URL = protectedResources.timeSheetApi.endpoint;
 
 // Token cache to avoid excessive requests
-let tokenCache: {
-  token: string;
-  expiresAt: number;
-} | null = null;
+let tokenCache = null;
 
 // Get the authentication token
-const getToken = async (): Promise<string | null> => {
+const getToken = async () => {
   try {
     // Check if we have a valid cached token
     if (tokenCache && tokenCache.expiresAt > Date.now()) {
@@ -54,9 +50,9 @@ const getToken = async (): Promise<string | null> => {
 };
 
 // Get authenticated headers
-const getAuthHeaders = async (): Promise<HeadersInit> => {
+const getAuthHeaders = async () => {
   const token = await getToken();
-  const headers: HeadersInit = {
+  const headers = {
     'Content-Type': 'application/json'
   };
   
@@ -68,7 +64,7 @@ const getAuthHeaders = async (): Promise<HeadersInit> => {
 };
 
 // Get timesheets for the current user
-export async function getTimesheets(userInfo: UserInfo): Promise<TimeSheet[]> {
+export async function getTimesheets(userInfo) {
   try {
     const headers = await getAuthHeaders();
     
@@ -90,7 +86,7 @@ export async function getTimesheets(userInfo: UserInfo): Promise<TimeSheet[]> {
       
       const data = await response.json();
       return data.timesheets || [];
-    } catch (fetchError: any) {
+    } catch (fetchError) {
       if (fetchError.name === 'AbortError') {
         console.warn('Fetch request timed out after 10 seconds');
         return []; // Return empty array on timeout
@@ -105,7 +101,7 @@ export async function getTimesheets(userInfo: UserInfo): Promise<TimeSheet[]> {
 }
 
 // Save a timesheet with user information
-export async function saveTimesheet(timesheet: TimeSheet, userInfo: UserInfo): Promise<{ id: string, message: string }> {
+export async function saveTimesheet(timesheet, userInfo) {
   try {
     const headers = await getAuthHeaders();
     
