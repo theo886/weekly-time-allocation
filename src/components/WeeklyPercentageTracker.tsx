@@ -9,6 +9,18 @@ import { Project, TimeEntry, TimeSheet } from '../models/types';
 import { saveTimesheet, getTimesheets } from '../services/timesheetService';
 import { useCurrentUser, getUserInfo } from '../auth/AuthProvider';
 
+// Format date range for the week - moved outside the component since it doesn't depend on component state
+const formatWeekRange = (startDate: Date): string => {
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 6);
+  
+  const formatDate = (date: Date): string => {
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  };
+  
+  return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+};
+
 const WeeklyPercentageTracker: React.FC = () => {
   // Sample projects data
   const projects: Project[] = [
@@ -71,18 +83,6 @@ const WeeklyPercentageTracker: React.FC = () => {
   // State to track if data is loading
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Format date range for the week
-  const formatWeekRange = (startDate: Date): string => {
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 6);
-    
-    const formatDate = (date: Date): string => {
-      return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
-    };
-    
-    return `${formatDate(startDate)} - ${formatDate(endDate)}`;
-  };
-
   // Define loadUserTimesheets as a useCallback function
   const loadUserTimesheets = useCallback(async () => {
     if (!userInfo) return;
@@ -131,7 +131,7 @@ const WeeklyPercentageTracker: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userInfo, currentWeek, formatWeekRange, isLoading]);
+  }, [userInfo, currentWeek, isLoading]);
 
   // Navigate to previous week
   const goToPreviousWeek = (): void => {
@@ -441,7 +441,7 @@ const WeeklyPercentageTracker: React.FC = () => {
       
       loadUserTimesheets();
     }
-  }, [userInfo?.userId, currentWeek, loadUserTimesheets, previousSubmissions, formatWeekRange]);
+  }, [userInfo?.userId, currentWeek, loadUserTimesheets, previousSubmissions]);
 
   // Submit the timesheet
   const submitTimesheet = async (): Promise<void> => {

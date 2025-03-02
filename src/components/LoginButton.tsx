@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useIsAuthenticated, useMsal } from '@azure/msal-react';
 import { loginRequest } from '../auth/authConfig';
 import { Button } from './ui/button';
-import { LogIn, LogOut, User } from 'lucide-react';
+import { LogIn, LogOut } from 'lucide-react';
 import { useCurrentUser, getUserInfo } from '../auth/AuthProvider';
 
 export const LoginButton: React.FC = () => {
-  const { instance, accounts } = useMsal();
+  const { instance } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   const currentUser = useCurrentUser();
   const userInfo = getUserInfo(currentUser);
