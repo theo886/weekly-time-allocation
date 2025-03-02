@@ -66,7 +66,43 @@ const getAuthHeaders = async () => {
 // Get timesheets for the current user
 export async function getTimesheets(userInfo) {
   try {
+    // Ensure userInfo is valid
+    if (!userInfo || !userInfo.userId) {
+      console.error('Invalid userInfo passed to getTimesheets:', userInfo);
+      return [];
+    }
+    
+    // Check for the problematic hardcoded user ID
+    if (userInfo.userId === 'user1_3-1-2023-3-7-2023') {
+      console.warn('Detected problematic hardcoded user ID. This appears to be a test ID and should not be used.');
+      return []; // Return empty array for this special case
+    }
+    
+    // Create a cache key for this specific user
+    const cacheKey = `timesheets_${userInfo.userId}`;
+    
+    // Check for cached data to prevent excessive fetching
+    const cachedData = sessionStorage.getItem(cacheKey);
+    if (cachedData) {
+      try {
+        const { timesheets, timestamp } = JSON.parse(cachedData);
+        const cacheAge = Date.now() - timestamp;
+        
+        // If cache is less than 30 seconds old, use it
+        if (cacheAge < 30000) {
+          console.log(`Using cached timesheets for user ${userInfo.userId}, cache age: ${cacheAge}ms`);
+          return timesheets;
+        }
+      } catch (e) {
+        console.warn('Error parsing cached timesheet data:', e);
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+    
     const headers = await getAuthHeaders();
+    
+    // Add detailed logging about the user info
+    console.log('Fetching timesheets with user info:', JSON.stringify(userInfo));
     
     // Create an AbortController with a timeout
     const controller = new AbortController();
@@ -85,6 +121,14 @@ export async function getTimesheets(userInfo) {
       }
       
       const data = await response.json();
+      console.log('Received timesheets response:', JSON.stringify(data));
+      
+      // Cache the result
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        timesheets: data.timesheets || [],
+        timestamp: Date.now()
+      }));
+      
       return data.timesheets || [];
     } catch (fetchError) {
       if (fetchError.name === 'AbortError') {

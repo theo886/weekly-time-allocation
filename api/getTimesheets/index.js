@@ -23,8 +23,10 @@ const httpTrigger = async function (context, req) {
     
     // Get user ID from the request
     const userId = req.query.userId;
+    context.log(`Received request for timesheets with userId: ${userId}`);
     
     if (!userId) {
+      context.log.warn('No user ID provided in request');
       context.res = {
         status: 400,
         body: "User ID is required"
@@ -39,6 +41,7 @@ const httpTrigger = async function (context, req) {
     const containerId = process.env.COSMOS_CONTAINER || "Timesheets";
     
     if (!endpoint || !key) {
+      context.log.error('Database connection information not configured');
       context.res = {
         status: 500,
         body: "Database connection information not configured"
@@ -62,7 +65,9 @@ const httpTrigger = async function (context, req) {
       ]
     };
     
+    context.log(`Executing query for user ${userId}: ${querySpec.query}`);
     const { resources: timesheets } = await container.items.query(querySpec).fetchAll();
+    context.log(`Found ${timesheets.length} timesheets for user ${userId}`);
     
     context.res = {
       status: 200,

@@ -4,6 +4,7 @@ import WeeklyPercentageTracker from './components/WeeklyPercentageTracker';
 import { MsalAuthProvider } from './auth/AuthProvider';
 import { LoginButton } from './components/LoginButton';
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
+import DebugInfo from './components/DebugInfo';
 
 function App() {
   return (
@@ -39,6 +40,8 @@ function App() {
             <p>© 2025 Your Company. All rights reserved.</p>
           </div>
         </footer>
+        
+        <DebugInfo />
       </div>
     </MsalAuthProvider>
   );

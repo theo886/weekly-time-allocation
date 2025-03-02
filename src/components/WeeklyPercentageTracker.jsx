@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Plus, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
@@ -57,10 +57,27 @@ const WeeklyPercentageTracker = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [timesheetExists, setTimesheetExists] = useState(false);
   const [existingTimesheetId, setExistingTimesheetId] = useState(null);
+  
+  // Use a ref to track if we're currently loading data
+  const isLoadingRef = useRef(false);
 
   // Get user information
   const currentUser = useCurrentUser();
   const userInfo = getUserInfo(currentUser);
+  
+  // Store the user ID in a ref to prevent unnecessary rerenders
+  const userIdRef = useRef(null);
+  
+  // Update the user ID ref when it changes
+  useEffect(() => {
+    if (userInfo && userInfo.userId) {
+      // Only update if it's different to avoid unnecessary effects
+      if (userIdRef.current !== userInfo.userId) {
+        console.log(`User ID changed from ${userIdRef.current} to ${userInfo.userId}`);
+        userIdRef.current = userInfo.userId;
+      }
+    }
+  }, [userInfo]);
 
   // Calculate total percentage
   const totalPercentage = entries.reduce((total, entry) => {
@@ -74,9 +91,30 @@ const WeeklyPercentageTracker = () => {
   // Load existing timesheet data when the week changes or user logs in
   useEffect(() => {
     const loadTimesheets = async () => {
-      if (!userInfo) return;
+      // Check if we have userInfo and a valid user ID
+      if (!userInfo || !userInfo.userId) {
+        console.log('No user info available, skipping timesheet fetch');
+        return;
+      }
       
+      // Verify that the user ID is consistent
+      if (userIdRef.current !== userInfo.userId) {
+        console.warn(`User ID mismatch: ref has ${userIdRef.current} but userInfo has ${userInfo.userId}`);
+        return;
+      }
+      
+      // Prevent unnecessary fetches
+      if (isLoadingRef.current) {
+        console.log('Already loading, skipping duplicate fetch');
+        return;
+      }
+      
+      console.log('Loading timesheets for week:', weekId, 'and user:', userInfo.userId);
+      
+      // Update both the state and the ref
       setIsLoading(true);
+      isLoadingRef.current = true;
+      
       setEntryErrors({});
       setSaveError(null);
       setSaveSuccess(false);
@@ -84,10 +122,24 @@ const WeeklyPercentageTracker = () => {
       try {
         const timesheets = await getTimesheets(userInfo);
         
+        // If the user ID changed during the fetch, discard the results
+        if (userIdRef.current !== userInfo.userId) {
+          console.warn('User ID changed during fetch, discarding results');
+          return;
+        }
+        
+        // Log all received timesheets for debugging
+        console.log('All timesheets received:', timesheets.map(ts => ({ 
+          id: ts.id,
+          weekStarting: ts.weekStarting,
+          userId: ts.userId 
+        })));
+        
         // Find the timesheet for the current week
         const existingTimesheet = timesheets.find(ts => ts.weekStarting === weekId);
         
-        if (existingTimesheet) {
+        if (existingTimesheet && existingTimesheet.entries && Array.isArray(existingTimesheet.entries)) {
+          console.log('Found existing timesheet for week:', weekId);
           setTimesheetExists(true);
           setExistingTimesheetId(existingTimesheet.id);
           
@@ -106,6 +158,7 @@ const WeeklyPercentageTracker = () => {
             isManuallySet: false 
           }]);
         } else {
+          console.log('No existing timesheet found for week:', weekId);
           // Reset to default state for a new week
           setTimesheetExists(false);
           setExistingTimesheetId(null);
@@ -114,12 +167,19 @@ const WeeklyPercentageTracker = () => {
       } catch (error) {
         console.error("Error loading timesheets:", error);
       } finally {
+        // Update both the state and the ref
         setIsLoading(false);
+        isLoadingRef.current = false;
       }
     };
     
-    loadTimesheets();
-  }, [currentWeek, userInfo, weekId]);
+    // Only load timesheets if we have a valid user
+    if (userInfo && userInfo.userId && userIdRef.current === userInfo.userId) {
+      loadTimesheets();
+    } else {
+      console.log('No valid user ID or ID mismatch, skipping timesheet load');
+    }
+  }, [currentWeek, weekId, userIdRef.current]); // Use userIdRef.current instead of userInfo
 
   // Validate total percentage whenever entries change
   useEffect(() => {
