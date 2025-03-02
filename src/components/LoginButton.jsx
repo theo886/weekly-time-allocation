@@ -5,13 +5,13 @@ import { Button } from './ui/button';
 import { LogIn, LogOut } from 'lucide-react';
 import { useCurrentUser, getUserInfo } from '../auth/AuthProvider';
 
-export const LoginButton: React.FC = () => {
+export const LoginButton = () => {
   const { instance } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   const currentUser = useCurrentUser();
   const userInfo = getUserInfo(currentUser);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
 
   const handleLogin = async () => {
     try {

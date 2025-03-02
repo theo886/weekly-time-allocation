@@ -1,4 +1,4 @@
-import { CosmosClient } from "@azure/cosmos";
+const { CosmosClient } = require("@azure/cosmos");
 
 /**
  * Azure Function to save a timesheet
@@ -107,4 +107,4 @@ const httpTrigger = async function (context, req) {
   }
 };
 
-export default httpTrigger; 
+module.exports = httpTrigger; 

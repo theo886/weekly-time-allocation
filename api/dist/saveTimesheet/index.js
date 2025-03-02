@@ -53,8 +53,8 @@ const httpTrigger = function (context, req) {
             // In a real app, you would get these from environment variables
             const endpoint = process.env.COSMOS_ENDPOINT || "";
             const key = process.env.COSMOS_KEY || "";
-            const databaseId = process.env.COSMOS_DATABASE || "timesheets";
-            const containerId = process.env.COSMOS_CONTAINER || "records";
+            const databaseId = process.env.COSMOS_DATABASE || "TimeAllocation";
+            const containerId = process.env.COSMOS_CONTAINER || "Timesheets";
             if (!endpoint || !key) {
                 context.res = {
                     status: 500,

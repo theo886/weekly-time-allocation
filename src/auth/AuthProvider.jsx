@@ -1,6 +1,6 @@
-import React, { ReactNode, useEffect } from "react";
+import React, { useEffect } from "react";
 import { MsalProvider, useMsal, useIsAuthenticated } from "@azure/msal-react";
-import { PublicClientApplication, EventType, AccountInfo, InteractionStatus } from "@azure/msal-browser";
+import { PublicClientApplication, EventType, InteractionStatus } from "@azure/msal-browser";
 import { msalConfig } from "./authConfig";
 
 // Initialize MSAL instance
@@ -21,8 +21,7 @@ msalInstance.handleRedirectPromise()
 msalInstance.addEventCallback(event => {
   if (event.eventType === EventType.LOGIN_SUCCESS && event.payload) {
     // The event payload for LOGIN_SUCCESS should contain the account
-    // Safely type check the event payload
-    const payload = event.payload as { account?: AccountInfo };
+    const payload = event.payload;
     if (payload.account) {
       msalInstance.setActiveAccount(payload.account);
       console.log("Login successful, account set:", payload.account);
@@ -30,11 +29,7 @@ msalInstance.addEventCallback(event => {
   }
 });
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const MsalAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const MsalAuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if we have active accounts on component mount
     const accounts = msalInstance.getAllAccounts();
@@ -54,7 +49,7 @@ export const MsalAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 };
 
 // Component to handle authentication state
-const AuthenticationHandler: React.FC<{ children: ReactNode }> = ({ children }) => {
+const AuthenticationHandler = ({ children }) => {
   const { instance, inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   
@@ -90,7 +85,7 @@ export const useCurrentUser = () => {
 };
 
 // Get user information from the account
-export const getUserInfo = (account: AccountInfo | null) => {
+export const getUserInfo = (account) => {
   if (!account) return null;
   
   return {
