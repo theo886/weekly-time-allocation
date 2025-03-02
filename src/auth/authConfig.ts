@@ -3,7 +3,7 @@ import { Configuration, LogLevel } from "@azure/msal-browser";
 // MSAL configuration
 export const msalConfig: Configuration = {
   auth: {
-    clientId: 5ad4bc33-fb98-47c5-a808-a254f7a37ded, // Replace with your app registration client ID
+    clientId: "5ad4bc33-fb98-47c5-a808-a254f7a37ded", // Replace with your app registration client ID
     authority: "https://login.microsoftonline.com/43e5dc39-9e1f-4979-b674-674ace58ff9a", // Replace with your tenant ID
     redirectUri: window.location.origin,
     postLogoutRedirectUri: window.location.origin,
@@ -14,7 +14,7 @@ export const msalConfig: Configuration = {
   },
   system: {
     loggerOptions: {
-      loggerCallback: (level, message, containsPii) => {
+      loggerCallback: (level: LogLevel, message: string, containsPii: boolean) => {
         if (containsPii) {
           return;
         }
