@@ -12,6 +12,10 @@ export interface TimeEntry {
 }
 
 export interface TimeSheet {
+  id?: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
   weekStarting: string;
   entries: {
     projectId: string;
@@ -19,4 +23,14 @@ export interface TimeSheet {
     percentage: string;
   }[];
   total: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UserInfo {
+  userId: string;
+  username: string;
+  name: string;
+  email: string;
+  tenantId: string;
 } 

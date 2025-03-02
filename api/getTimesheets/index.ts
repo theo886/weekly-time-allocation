@@ -5,8 +5,30 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
   context.log('HTTP trigger function processed a request to get timesheets');
 
   try {
-    // Get user ID from the request (could be from auth in a real app)
-    const userId = req.query.userId || "default-user";
+    // Check for authentication 
+    const authHeader = req.headers["authorization"];
+    
+    // In production, you should validate the token here
+    // This involves checking the signature and claims
+    // For simplicity, we're just checking if the header exists
+    if (!authHeader && process.env.NODE_ENV === 'production') {
+      context.res = {
+        status: 401,
+        body: "Authorization required"
+      };
+      return;
+    }
+    
+    // Get user ID from the request
+    const userId = req.query.userId;
+    
+    if (!userId) {
+      context.res = {
+        status: 400,
+        body: "User ID is required"
+      };
+      return;
+    }
     
     // In a real app, you would get these from environment variables
     const endpoint = process.env.COSMOS_ENDPOINT || "";
@@ -29,7 +51,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     
     // Query for all timesheets for the given user
     const querySpec = {
-      query: "SELECT * FROM c WHERE c.userId = @userId",
+      query: "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.weekStarting DESC",
       parameters: [
         {
           name: "@userId",
@@ -45,7 +67,9 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
       headers: {
         'Content-Type': 'application/json'
       },
-      body: timesheets
+      body: {
+        timesheets: timesheets
+      }
     };
   } catch (error) {
     context.log.error("Error fetching timesheets:", error);
