@@ -386,6 +386,11 @@ const WeeklyPercentageTracker: React.FC = () => {
     }, 0);
   };
 
+  // Check for duplicate projects
+  const isDuplicateProject = (projectId: string): boolean => {
+    return entries.filter(entry => entry.projectId === projectId).length > 1;
+  };
+
   // Validate entries before submission
   useEffect(() => {
     const total = calculateTotal();
@@ -397,12 +402,7 @@ const WeeklyPercentageTracker: React.FC = () => {
     } else {
       setError("");
     }
-  }, [entries]);
-
-  // Check for duplicate projects
-  const isDuplicateProject = (projectId: string): boolean => {
-    return entries.filter(entry => entry.projectId === projectId).length > 1;
-  };
+  }, [entries, calculateTotal, isDuplicateProject]);
 
   // Check if current week is already in previousSubmissions
   useEffect(() => {
@@ -441,7 +441,7 @@ const WeeklyPercentageTracker: React.FC = () => {
       
       loadUserTimesheets();
     }
-  }, [userInfo?.userId, currentWeek, loadUserTimesheets, previousSubmissions]);
+  }, [userInfo, userInfo?.userId, currentWeek, loadUserTimesheets, previousSubmissions]);
 
   // Submit the timesheet
   const submitTimesheet = async (): Promise<void> => {
