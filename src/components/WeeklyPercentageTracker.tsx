@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, Plus, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
@@ -82,6 +82,53 @@ const WeeklyPercentageTracker: React.FC = () => {
     
     return `${formatDate(startDate)} - ${formatDate(endDate)}`;
   };
+
+  // Define loadUserTimesheets as a useCallback function
+  const loadUserTimesheets = useCallback(async () => {
+    if (!userInfo) return;
+    
+    setIsLoading(true);
+    setApiError("");
+    
+    try {
+      const userTimesheets = await getTimesheets(userInfo);
+      console.log("Loaded user timesheets:", userTimesheets);
+      
+      if (userTimesheets && userTimesheets.length > 0) {
+        // Build a record of entries by week
+        const submissionsByWeek: Record<string, TimeEntry[]> = {};
+        
+        userTimesheets.forEach(sheet => {
+          // Convert API entries to local TimeEntry format
+          const entries: TimeEntry[] = sheet.entries.map((entry, index) => ({
+            id: Date.now() + index, // Generate unique IDs
+            projectId: entry.projectId,
+            percentage: entry.percentage,
+            isManuallySet: true
+          }));
+          
+          submissionsByWeek[sheet.weekStarting] = entries;
+        });
+        
+        setPreviousSubmissions(submissionsByWeek);
+        
+        // Check if we have data for the current week
+        const currentWeekKey = formatWeekRange(currentWeek);
+        if (submissionsByWeek[currentWeekKey]) {
+          setEntries(submissionsByWeek[currentWeekKey].map(entry => ({
+            ...entry,
+            id: Date.now() + Math.random() // Generate new IDs
+          })));
+          setIsSubmitted(true);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load user timesheets:", error);
+      setApiError("Failed to load your timesheet data. Please refresh and try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userInfo, currentWeek, formatWeekRange]);
 
   // Navigate to previous week
   const goToPreviousWeek = (): void => {
@@ -362,56 +409,36 @@ const WeeklyPercentageTracker: React.FC = () => {
     setIsModified(false);
   }, [currentWeek, previousSubmissions]);
   
-  // Load user's timesheets when they log in
+  // useEffect to load user timesheets only when user is available or week changes
   useEffect(() => {
-    const loadUserTimesheets = async () => {
-      if (!userInfo) return;
+    // Only attempt to load if we have a user
+    if (userInfo && userInfo.userId) {
+      const weekKey = formatWeekRange(currentWeek);
+      console.log(`Loading timesheets for week: ${weekKey} and user: ${userInfo.userId}`);
       
-      setIsLoading(true);
-      setApiError("");
-      
-      try {
-        const userTimesheets = await getTimesheets(userInfo);
-        console.log("Loaded user timesheets:", userTimesheets);
+      // If we already have this week's data, don't reload it
+      if (previousSubmissions[weekKey]) {
+        console.log("Using cached timesheet data for this week");
         
-        if (userTimesheets && userTimesheets.length > 0) {
-          // Build a record of entries by week
-          const submissionsByWeek: Record<string, TimeEntry[]> = {};
-          
-          userTimesheets.forEach(sheet => {
-            // Convert API entries to local TimeEntry format
-            const entries: TimeEntry[] = sheet.entries.map((entry, index) => ({
-              id: Date.now() + index, // Generate unique IDs
-              projectId: entry.projectId,
-              percentage: entry.percentage,
-              isManuallySet: true
-            }));
-            
-            submissionsByWeek[sheet.weekStarting] = entries;
-          });
-          
-          setPreviousSubmissions(submissionsByWeek);
-          
-          // Check if we have data for the current week
-          const currentWeekKey = formatWeekRange(currentWeek);
-          if (submissionsByWeek[currentWeekKey]) {
-            setEntries(submissionsByWeek[currentWeekKey].map(entry => ({
-              ...entry,
-              id: Date.now() + Math.random() // Generate new IDs
-            })));
-            setIsSubmitted(true);
-          }
+        const previousWeekEntries = previousSubmissions[weekKey];
+        
+        // Check if the week was submitted
+        setIsSubmitted(!!previousWeekEntries);
+        setIsModified(false);
+        
+        // If we have entries for this week, use them
+        if (previousWeekEntries && previousWeekEntries.length > 0) {
+          setEntries(previousWeekEntries.map(entry => ({
+            ...entry,
+            id: Date.now() + Math.random() // Generate new IDs
+          })));
         }
-      } catch (error) {
-        console.error("Failed to load user timesheets:", error);
-        setApiError("Failed to load your timesheet data. Please refresh and try again.");
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    };
-    
-    loadUserTimesheets();
-  }, [userInfo, currentWeek]);
+      
+      loadUserTimesheets();
+    }
+  }, [userInfo?.userId, currentWeek, loadUserTimesheets, previousSubmissions, formatWeekRange]);
 
   // Submit the timesheet
   const submitTimesheet = async (): Promise<void> => {
