@@ -24,6 +24,31 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
+    <!-- Handle source map errors for MSAL and other libraries -->
+    <script>
+      // Catch source map loading errors
+      window.addEventListener('error', function(event) {
+        if (event.filename && event.filename.endsWith('.map')) {
+          // Prevent the error from showing in the console
+          event.preventDefault();
+          console.log('Suppressed source map error for:', event.filename);
+          return true;
+        }
+      }, true);
+
+      // Override fetch for source maps to prevent 404 errors
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (typeof url === 'string' && url.endsWith('.map')) {
+          // Return a resolved promise with an empty response for source map requests
+          return Promise.resolve(new Response('', {
+            status: 200,
+            headers: {'Content-Type': 'application/json'}
+          }));
+        }
+        return originalFetch(url, options);
+      };
+    </script>
     <title>Weekly Time Allocation</title>
   </head>
   <body>
