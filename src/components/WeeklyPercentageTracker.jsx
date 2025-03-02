@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
@@ -254,17 +254,12 @@ const WeeklyPercentageTracker = () => {
     const changedEntry = updatedEntries.find(e => e.id === changedId);
     if (!changedEntry) return;
     
-    // The percentage of the changed entry
-    const changedPercentage = parseFloat(changedEntry.percentage) || 0;
-    
     // Calculate total for all entries except manually set ones
     let totalManualPercentage = 0;
-    let manualEntryCount = 0;
     
     updatedEntries.forEach(entry => {
       if (entry.isManuallySet || entry.id === changedId) {
         totalManualPercentage += parseFloat(entry.percentage) || 0;
-        manualEntryCount++;
       }
     });
     
