@@ -449,25 +449,21 @@ const WeeklyPercentageTracker: React.FC = () => {
           <div className="flex items-center justify-center mb-3">
             <Button 
               variant="ghost" 
-              onClick={() => {
-                console.log("Pin button clicked, current state:", isPinned);
-                setIsPinned(!isPinned);
-              }} 
+              onClick={() => setIsPinned(!isPinned)} 
               className={`mr-2 ${isPinned ? 'text-red-500' : 'text-slate-400'}`}
               title={isPinned ? "Unpin current allocations" : "Pin current allocations"}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              {/* This is the "Thumbtack" icon from Font Awesome Free. */}
+              {/* We're using fill="currentColor" so Tailwind classes affect its color. */}
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 384 512" 
+                fill="currentColor" 
                 className="w-5 h-5"
-                viewBox="0 0 24 24"
               >
-                <path d="M21 10c0 5.523-9 13-9 13S3 15.523 3 10a9 9 0 1 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
+                <path d="M298.7 174.7c47.6 7 85.3 48.5 85.3 97.3 0 53-43 96-96 96h-32l-32 144H160l-32-144H96c-53 
+                  0-96-43-96-96 0-48.8 37.7-90.3 85.3-97.3C77 143.5 64 118 64 90.7 64 40.6 105.6 0 155.7 
+                  0h72.6c50.2 0 91.7 40.6 91.7 90.7 0 27.4-13 52.8-33.3 84z" />
               </svg>
             </Button>
             <span className="text-lg font-semibold text-slate-800">
