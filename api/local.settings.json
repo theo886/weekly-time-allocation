@@ -3,10 +3,10 @@
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "COSMOS_ENDPOINT": "YOUR_COSMOS_ENDPOINT",
-    "COSMOS_KEY": "YOUR_COSMOS_KEY",
-    "COSMOS_DATABASE": "timesheets",
-    "COSMOS_CONTAINER": "records"
+    "COSMOS_ENDPOINT": "https://weekly-time-allocation-db.documents.azure.com:443/",
+    "COSMOS_KEY": "AccountEndpoint=https://weekly-time-allocation-db.documents.azure.com:443/;AccountKey=Heah0xlJFctA13ORkKE0H6PoKNZhBbzNdfTFe5Yu3lwE7nyWKH3E6JqgUhj8QB7lH2mFNmM0i3WbACDbYLE2yQ==;",
+    "COSMOS_DATABASE": "TimeAllocation",
+    "COSMOS_CONTAINER": "Timesheets"
   },
   "Host": {
     "CORS": "*"
