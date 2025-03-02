@@ -26,6 +26,10 @@ msalInstance.addEventCallback(event => {
       msalInstance.setActiveAccount(payload.account);
       console.log("Login successful, account set:", payload.account);
     }
+  } else if (event.eventType === EventType.LOGOUT_SUCCESS) {
+    // Clear cache on logout
+    console.log("Logout successful, clearing cache");
+    sessionStorage.clear();
   }
 });
 
@@ -86,13 +90,43 @@ export const useCurrentUser = () => {
 
 // Get user information from the account
 export const getUserInfo = (account) => {
-  if (!account) return null;
+  if (!account) {
+    console.log("getUserInfo called with no account");
+    return null;
+  }
   
-  return {
+  // Ensure we have valid data
+  if (!account.localAccountId) {
+    console.warn("Account missing localAccountId:", account);
+    
+    // If for some reason there's an issue with the account ID, use a fallback
+    // based on the username to ensure we have a stable userId
+    const fallbackId = account.username ? 
+      `user_${account.username.replace(/[^a-zA-Z0-9]/g, '_')}` : 
+      null;
+      
+    if (!fallbackId) {
+      console.error("Cannot determine user ID from account:", account);
+      return null;
+    }
+    
+    return {
+      username: account.username,
+      name: account.name || account.username,
+      email: account.username,
+      userId: fallbackId,
+      tenantId: account.tenantId || "unknown-tenant"
+    };
+  }
+  
+  const userInfo = {
     username: account.username,
     name: account.name || account.username,
     email: account.username,
     userId: account.localAccountId,
     tenantId: account.tenantId
   };
+  
+  console.log("Generated user info:", userInfo);
+  return userInfo;
 }; 
