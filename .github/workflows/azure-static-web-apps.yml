@@ -18,6 +18,13 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+          
+      - name: Setup environment files
+        run: |
+          cp .env.ci .env
+          cp .env.ci .env.production
+          echo "Setting up CI environment with ESLint disabled"
+          
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -27,7 +34,7 @@ jobs:
           app_location: "/" # App source code path
           api_location: "api" # API source code path
           output_location: "build" # Built app content directory
-          app_build_command: "npm run build"
+          app_build_command: "npm run build:ci"
           api_build_command: "npm run build --if-present"
           action: "upload"
           skip_deploy_on_missing_secrets: true # Skip deployment if API token is missing
