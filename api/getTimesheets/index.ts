@@ -1,7 +1,9 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { CosmosClient } from "@azure/cosmos";
 
-const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
+/**
+ * Azure Function to get timesheets for a user
+ */
+const httpTrigger = async function (context, req) {
   context.log('HTTP trigger function processed a request to get timesheets');
 
   try {

@@ -1,7 +1,9 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { CosmosClient } from "@azure/cosmos";
 
-const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
+/**
+ * Azure Function to save a timesheet
+ */
+const httpTrigger = async function (context, req) {
   context.log('HTTP trigger function processed a request to save a timesheet');
 
   try {
@@ -28,7 +30,8 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     }
 
     // Extract user information from the request body
-    const { userId, userEmail, userName } = req.body;
+    const timesheet = req.body;
+    const { userId, userEmail, userName } = timesheet;
     
     if (!userId || !userEmail) {
       context.res = {
@@ -37,9 +40,6 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
       };
       return;
     }
-    
-    // Extract timesheet data from the request body
-    const timesheet = req.body;
     
     // Add metadata
     timesheet.id = timesheet.id || `${userId}-${timesheet.weekStarting}`;
