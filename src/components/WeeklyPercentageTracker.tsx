@@ -557,16 +557,21 @@ const WeeklyPercentageTracker: React.FC = () => {
             <div className="flex items-center justify-center mb-3">
               <Button 
                 variant="ghost" 
-                onClick={() => setIsPinned(!isPinned)} 
+                onClick={() => {
+                  console.log("Pin button clicked, current state:", isPinned);
+                  setIsPinned(!isPinned);
+                }} 
                 className={`mr-2 ${isPinned ? 'text-red-500' : 'text-slate-400'}`}
                 title={isPinned ? "Unpin current allocations" : "Pin current allocations"}
               >
                 {/* This is the "Thumbtack" icon from Font Awesome Free. */}
-                {/* We're using fill="currentColor" so Tailwind classes affect its color. */}
+                {/* We're applying both color and fill changes for better visual feedback */}
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 
                   viewBox="0 0 384 512" 
-                  fill="currentColor" 
+                  fill={isPinned ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  strokeWidth={isPinned ? "0" : "1"}
                   className="w-5 h-5"
                 >
                   <path d="M298.7 174.7c47.6 7 85.3 48.5 85.3 97.3 0 53-43 96-96 96h-32l-32 144H160l-32-144H96c-53 
