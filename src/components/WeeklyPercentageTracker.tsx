@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, X, AlertCircle } from 'lucide-react';
+import { Calendar, Plus, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { Project, TimeEntry, TimeSheet } from '../models/types';
+import { saveTimesheet } from '../services/timesheetService';
 
 const WeeklyPercentageTracker: React.FC = () => {
   // Sample projects data
@@ -55,6 +56,12 @@ const WeeklyPercentageTracker: React.FC = () => {
   
   // State to track if submitted data has been modified
   const [isModified, setIsModified] = useState<boolean>(false);
+  
+  // State to track API saving status
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  // State to track API error
+  const [apiError, setApiError] = useState<string>("");
 
   // Format date range for the week
   const formatWeekRange = (startDate: Date): string => {
@@ -340,7 +347,7 @@ const WeeklyPercentageTracker: React.FC = () => {
   };
 
   // Submit the timesheet
-  const submitTimesheet = (): void => {
+  const submitTimesheet = async (): Promise<void> => {
     const total = calculateTotal();
     
     if (total !== 100) {
@@ -362,7 +369,7 @@ const WeeklyPercentageTracker: React.FC = () => {
       return;
     }
     
-    // In a real app, you would send this data to an API
+    // Prepare timesheet data for API submission
     const timesheetData: TimeSheet = {
       weekStarting: formatWeekRange(currentWeek),
       entries: entries.map(entry => ({
@@ -375,28 +382,48 @@ const WeeklyPercentageTracker: React.FC = () => {
     
     console.log("Submitting timesheet:", timesheetData);
     
-    // Store this week's entries for future reference
-    const weekKey = formatWeekRange(currentWeek);
-    setPreviousSubmissions({
-      ...previousSubmissions,
-      [weekKey]: [...entries]
-    });
+    // Set loading state
+    setIsSaving(true);
+    setApiError("");
     
-    // Update submission state
-    setIsSubmitted(true);
-    setIsModified(false);
-    
-    // Show message based on whether this is an update or new submission
-    if (isSubmitted && isModified) {
-      alert("Timesheet updated successfully!");
-    } else {
-      alert("Timesheet submitted successfully!");
+    try {
+      // Call the API to save the timesheet
+      const result = await saveTimesheet(timesheetData);
+      console.log("API response:", result);
+      
+      // Store this week's entries for future reference (local memory cache)
+      const weekKey = formatWeekRange(currentWeek);
+      setPreviousSubmissions({
+        ...previousSubmissions,
+        [weekKey]: [...entries]
+      });
+      
+      // Update submission state
+      setIsSubmitted(true);
+      setIsModified(false);
+      
+      // Show message based on whether this is an update or new submission
+      if (isModified) {
+        alert("Timesheet updated successfully!");
+      } else {
+        alert("Timesheet submitted successfully!");
+      }
+    } catch (error) {
+      console.error("Failed to save timesheet:", error);
+      setApiError("Failed to save timesheet. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // Get button text and style based on submission state
   const getButtonProps = () => {
-    if (isSubmitted) {
+    if (isSaving) {
+      return {
+        text: "Saving...",
+        className: "bg-indigo-400 text-white px-8 py-2 rounded cursor-wait"
+      };
+    } else if (isSubmitted) {
       if (isModified) {
         return {
           text: "Update",
@@ -420,7 +447,8 @@ const WeeklyPercentageTracker: React.FC = () => {
   const isButtonDisabled = (): boolean => {
     return calculateTotal() !== 100 || 
            (!!error && error !== "Please select a project for all entries" && error !== "Please enter percentage for all selected projects") ||
-           (isSubmitted && !isModified);
+           (isSubmitted && !isModified) ||
+           isSaving;
   };
 
   // Check if current week is already in previousSubmissions
@@ -476,6 +504,15 @@ const WeeklyPercentageTracker: React.FC = () => {
               <div className="flex items-center">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
+              </div>
+            </Alert>
+          )}
+          
+          {apiError && (
+            <Alert className="mb-4 bg-red-50 text-red-800 border border-red-200">
+              <div className="flex items-center">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{apiError}</AlertDescription>
               </div>
             </Alert>
           )}
@@ -576,7 +613,14 @@ const WeeklyPercentageTracker: React.FC = () => {
             className={getButtonProps().className}
             disabled={isButtonDisabled()}
           >
-            {getButtonProps().text}
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {getButtonProps().text}
+              </>
+            ) : (
+              getButtonProps().text
+            )}
           </Button>
         </CardFooter>
       </Card>
