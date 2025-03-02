@@ -72,19 +72,35 @@ export async function getTimesheets(userInfo: UserInfo): Promise<TimeSheet[]> {
   try {
     const headers = await getAuthHeaders();
     
-    const response = await fetch(`${API_BASE_URL}/timesheets?userId=${userInfo.userId}`, {
-      headers
-    });
+    // Create an AbortController with a timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
-    if (!response.ok) {
-      throw new Error(`Error fetching timesheets: ${response.statusText}`);
+    try {
+      const response = await fetch(`${API_BASE_URL}/timesheets?userId=${userInfo.userId}`, {
+        headers,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching timesheets: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data.timesheets || [];
+    } catch (fetchError: any) {
+      if (fetchError.name === 'AbortError') {
+        console.warn('Fetch request timed out after 10 seconds');
+        return []; // Return empty array on timeout
+      }
+      throw fetchError;
     }
-    
-    const data = await response.json();
-    return data.timesheets || [];
   } catch (error) {
     console.error('Failed to fetch timesheets:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent cascade of errors
+    return [];
   }
 }
 

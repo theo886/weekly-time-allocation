@@ -87,6 +87,9 @@ const WeeklyPercentageTracker: React.FC = () => {
   const loadUserTimesheets = useCallback(async () => {
     if (!userInfo) return;
     
+    // Add a guard to prevent multiple simultaneous loads
+    if (isLoading) return;
+    
     setIsLoading(true);
     setApiError("");
     
@@ -128,7 +131,7 @@ const WeeklyPercentageTracker: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userInfo, currentWeek, formatWeekRange]);
+  }, [userInfo, currentWeek, formatWeekRange, isLoading]);
 
   // Navigate to previous week
   const goToPreviousWeek = (): void => {

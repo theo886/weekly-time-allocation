@@ -21,18 +21,13 @@ export const LoginButton: React.FC = () => {
       setError(null);
       console.log("Starting login process...");
       
-      // Simplified login process - don't try to logout first
-      // This prevents potential redirect loops
-      await instance.loginRedirect({
-        ...loginRequest,
-        redirectStartPage: window.location.href // Ensure we come back to the same page
-      });
+      // Standard login with correct parameters
+      await instance.loginRedirect(loginRequest);
     } catch (error) {
       console.error("Login failed:", error);
       setError("Login failed. Please try again.");
       setIsLoggingIn(false); // Reset login state on error
     }
-    // Note: We don't set isLoggingIn to false here because the page will redirect
   };
 
   const handleLogout = async () => {

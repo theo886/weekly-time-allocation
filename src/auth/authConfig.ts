@@ -3,10 +3,11 @@ import { Configuration, LogLevel } from "@azure/msal-browser";
 // MSAL configuration
 export const msalConfig: Configuration = {
   auth: {
-    clientId: "5ad4bc33-fb98-47c5-a808-a254f7a37ded", // Replace with your app registration client ID
-    authority: "https://login.microsoftonline.com/43e5dc39-9e1f-4979-b674-674ace58ff9a", // Replace with your tenant ID
+    clientId: "5ad4bc33-fb98-47c5-a808-a254f7a37ded",
+    authority: "https://login.microsoftonline.com/43e5dc39-9e1f-4979-b674-674ace58ff9a",
     redirectUri: window.location.origin,
     postLogoutRedirectUri: window.location.origin,
+    navigateToLoginRequestUrl: true
   },
   cache: {
     cacheLocation: "sessionStorage",
@@ -33,6 +34,7 @@ export const msalConfig: Configuration = {
             return;
         }
       },
+      logLevel: LogLevel.Verbose
     },
   },
 };
@@ -48,6 +50,6 @@ export const protectedResources = {
     endpoint: window.location.hostname === 'localhost' 
       ? 'http://localhost:7071/api' 
       : '/api',
-    scopes: ["api://5ad4bc33-fb98-47c5-a808-a254f7a37ded/access_as_user"] // Using your existing app ID
+    scopes: ["User.Read"] // Simplified scope that should work
   }
 }; 
