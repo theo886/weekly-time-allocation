@@ -15,36 +15,38 @@ export const LoginButton: React.FC = () => {
 
   const handleLogin = async () => {
     try {
+      if (isLoggingIn) return; // Prevent multiple login attempts
+      
       setIsLoggingIn(true);
       setError(null);
       console.log("Starting login process...");
       
-      // Instead of clearCache (which doesn't exist), just logout before login
-      // This can help with authentication loops
-      if (accounts.length > 0) {
-        // Remove all accounts from the cache
-        accounts.forEach(account => {
-          instance.logoutRedirect({
-            account,
-            postLogoutRedirectUri: window.location.origin
-          }).catch(e => console.error("Logout during login failed:", e));
-          return; // Just remove the first account
-        });
-      } else {
-        await instance.loginRedirect(loginRequest);
-      }
+      // Simplified login process - don't try to logout first
+      // This prevents potential redirect loops
+      await instance.loginRedirect({
+        ...loginRequest,
+        redirectStartPage: window.location.href // Ensure we come back to the same page
+      });
     } catch (error) {
       console.error("Login failed:", error);
       setError("Login failed. Please try again.");
-    } finally {
-      setIsLoggingIn(false);
+      setIsLoggingIn(false); // Reset login state on error
     }
+    // Note: We don't set isLoggingIn to false here because the page will redirect
   };
 
   const handleLogout = async () => {
     try {
       console.log("Starting logout process...");
-      await instance.logoutRedirect();
+      const account = instance.getActiveAccount();
+      if (account) {
+        await instance.logoutRedirect({
+          account,
+          postLogoutRedirectUri: window.location.origin
+        });
+      } else {
+        await instance.logoutRedirect();
+      }
     } catch (error) {
       console.error("Logout failed:", error);
     }
