@@ -48,6 +48,6 @@ export const protectedResources = {
     endpoint: window.location.hostname === 'localhost' 
       ? 'http://localhost:7071/api' 
       : '/api',
-    scopes: ["api://5ad4bc33-fb98-47c5-a808-a254f7a37ded/access_as_user"] // Replace with your API scope
+    scopes: ["api://5ad4bc33-fb98-47c5-a808-a254f7a37ded/access_as_user"] // Using your existing app ID
   }
 }; 
