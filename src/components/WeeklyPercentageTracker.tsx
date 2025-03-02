@@ -379,17 +379,17 @@ const WeeklyPercentageTracker: React.FC = () => {
   };
 
   // Calculate total percentage
-  const calculateTotal = (): number => {
+  const calculateTotal = useCallback((): number => {
     return entries.reduce((sum, entry) => {
       const percentage = parseInt(entry.percentage) || 0;
       return sum + percentage;
     }, 0);
-  };
+  }, [entries]);
 
   // Check for duplicate projects
-  const isDuplicateProject = (projectId: string): boolean => {
+  const isDuplicateProject = useCallback((projectId: string): boolean => {
     return entries.filter(entry => entry.projectId === projectId).length > 1;
-  };
+  }, [entries]);
 
   // Validate entries before submission
   useEffect(() => {
