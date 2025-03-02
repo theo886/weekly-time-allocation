@@ -4,6 +4,9 @@ import { protectedResources } from '../auth/authConfig';
 // Base URL for API requests
 const API_BASE_URL = protectedResources.timeSheetApi.endpoint;
 
+// Log the actual API base URL being used
+console.log('[TIMESHEET-DEBUG] API_BASE_URL resolved to:', API_BASE_URL);
+
 // Token cache to avoid excessive requests
 let tokenCache = null;
 
@@ -66,20 +69,28 @@ const getAuthHeaders = async () => {
 // Get timesheets for the current user
 export async function getTimesheets(userInfo) {
   try {
+    console.log('[TIMESHEET-DEBUG] getTimesheets called with:', JSON.stringify(userInfo, null, 2));
+    
     // Ensure userInfo is valid
     if (!userInfo || !userInfo.userId) {
-      console.error('Invalid userInfo passed to getTimesheets:', userInfo);
+      console.error('[TIMESHEET-DEBUG] Invalid userInfo passed to getTimesheets:', userInfo);
       return [];
     }
     
     // Check for the problematic hardcoded user ID
     if (userInfo.userId === 'user1_3-1-2023-3-7-2023') {
-      console.warn('Detected problematic hardcoded user ID. This appears to be a test ID and should not be used.');
+      console.warn('[TIMESHEET-DEBUG] Detected problematic hardcoded user ID. This appears to be a test ID and should not be used.');
       return []; // Return empty array for this special case
+    }
+
+    // Additional check - if the userId contains "user1", log a warning as it might be test data
+    if (userInfo.userId && userInfo.userId.includes('user1')) {
+      console.warn('[TIMESHEET-DEBUG] userId contains "user1", which might indicate test data:', userInfo.userId);
     }
     
     // Create a cache key for this specific user
     const cacheKey = `timesheets_${userInfo.userId}`;
+    console.log('[TIMESHEET-DEBUG] Using cache key:', cacheKey);
     
     // Check for cached data to prevent excessive fetching
     const cachedData = sessionStorage.getItem(cacheKey);
@@ -90,38 +101,45 @@ export async function getTimesheets(userInfo) {
         
         // If cache is less than 30 seconds old, use it
         if (cacheAge < 30000) {
-          console.log(`Using cached timesheets for user ${userInfo.userId}, cache age: ${cacheAge}ms`);
+          console.log(`[TIMESHEET-DEBUG] Using cached timesheets for user ${userInfo.userId}, cache age: ${cacheAge}ms`);
+          console.log('[TIMESHEET-DEBUG] Cached timesheets:', JSON.stringify(timesheets));
           return timesheets;
         }
       } catch (e) {
-        console.warn('Error parsing cached timesheet data:', e);
+        console.warn('[TIMESHEET-DEBUG] Error parsing cached timesheet data:', e);
         sessionStorage.removeItem(cacheKey);
       }
     }
     
     const headers = await getAuthHeaders();
+    console.log('[TIMESHEET-DEBUG] Auth headers obtained:', headers.Authorization ? 'Authorization header present' : 'No Authorization header');
     
     // Add detailed logging about the user info
-    console.log('Fetching timesheets with user info:', JSON.stringify(userInfo));
+    console.log('[TIMESHEET-DEBUG] Fetching timesheets with user info:', JSON.stringify(userInfo));
     
     // Create an AbortController with a timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
+    // Log the API URL being called
+    const apiUrl = `${API_BASE_URL}/timesheets?userId=${userInfo.userId}`;
+    console.log('[TIMESHEET-DEBUG] Calling API URL:', apiUrl);
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/timesheets?userId=${userInfo.userId}`, {
+      const response = await fetch(apiUrl, {
         headers,
         signal: controller.signal
       });
       
       clearTimeout(timeoutId);
+      console.log('[TIMESHEET-DEBUG] API response status:', response.status, response.statusText);
       
       if (!response.ok) {
         throw new Error(`Error fetching timesheets: ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('Received timesheets response:', JSON.stringify(data));
+      console.log('[TIMESHEET-DEBUG] Raw API response:', JSON.stringify(data));
       
       // Cache the result
       sessionStorage.setItem(cacheKey, JSON.stringify({
@@ -129,6 +147,7 @@ export async function getTimesheets(userInfo) {
         timestamp: Date.now()
       }));
       
+      console.log('[TIMESHEET-DEBUG] Returning timesheets:', JSON.stringify(data.timesheets || []));
       return data.timesheets || [];
     } catch (fetchError) {
       if (fetchError.name === 'AbortError') {

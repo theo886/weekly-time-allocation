@@ -93,23 +93,27 @@ const WeeklyPercentageTracker = () => {
   const handleLoadTimesheets = useCallback(async () => {
     // Check if we have userInfo and a valid user ID
     if (!userInfo || !userInfo.userId) {
-      console.log('No user info available, skipping timesheet fetch');
+      console.log('[COMPONENT-DEBUG] No user info available, skipping timesheet fetch');
+      console.log('[COMPONENT-DEBUG] userInfo:', userInfo);
       return;
     }
     
+    // Debug the userInfo object fully
+    console.log('[COMPONENT-DEBUG] handleLoadTimesheets with userInfo:', JSON.stringify(userInfo, null, 2));
+    
     // Verify that the user ID is consistent
     if (userIdRef.current !== userInfo.userId) {
-      console.warn(`User ID mismatch: ref has ${userIdRef.current} but userInfo has ${userInfo.userId}`);
+      console.warn(`[COMPONENT-DEBUG] User ID mismatch: ref has ${userIdRef.current} but userInfo has ${userInfo.userId}`);
       return;
     }
     
     // Prevent unnecessary fetches
     if (isLoadingRef.current) {
-      console.log('Already loading, skipping duplicate fetch');
+      console.log('[COMPONENT-DEBUG] Already loading, skipping duplicate fetch');
       return;
     }
     
-    console.log('Loading timesheets for week:', weekId, 'and user:', userInfo.userId);
+    console.log('[COMPONENT-DEBUG] Loading timesheets for week:', weekId, 'and user:', userInfo.userId);
     
     // Update both the state and the ref
     setIsLoading(true);
@@ -120,11 +124,13 @@ const WeeklyPercentageTracker = () => {
     setSaveSuccess(false);
     
     try {
+      console.log('[COMPONENT-DEBUG] Calling getTimesheets with userInfo:', JSON.stringify(userInfo, null, 2));
       const timesheets = await getTimesheets(userInfo);
+      console.log('[COMPONENT-DEBUG] Timesheets received:', JSON.stringify(timesheets));
       
       // If the user ID changed during the fetch, discard the results
       if (userIdRef.current !== userInfo.userId) {
-        console.warn('User ID changed during fetch, discarding results');
+        console.warn('[COMPONENT-DEBUG] User ID changed during fetch, discarding results');
         return;
       }
       

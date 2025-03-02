@@ -82,22 +82,31 @@ export const useCurrentUser = () => {
   const isAuthenticated = useIsAuthenticated();
   
   if (!isAuthenticated || accounts.length === 0) {
+    console.log("[AUTH-DEBUG] useCurrentUser: Not authenticated or no accounts");
     return null;
   }
   
+  console.log("[AUTH-DEBUG] useCurrentUser: Returning account", accounts[0]);
   return accounts[0];
 };
 
 // Get user information from the account
 export const getUserInfo = (account) => {
   if (!account) {
-    console.log("getUserInfo called with no account");
+    console.log("[AUTH-DEBUG] getUserInfo called with no account");
     return null;
   }
   
+  console.log("[AUTH-DEBUG] getUserInfo input:", JSON.stringify({
+    localAccountId: account.localAccountId,
+    username: account.username,
+    name: account.name,
+    tenantId: account.tenantId
+  }, null, 2));
+  
   // Ensure we have valid data
   if (!account.localAccountId) {
-    console.warn("Account missing localAccountId:", account);
+    console.warn("[AUTH-DEBUG] Account missing localAccountId:", account);
     
     // If for some reason there's an issue with the account ID, use a fallback
     // based on the username to ensure we have a stable userId
@@ -106,17 +115,20 @@ export const getUserInfo = (account) => {
       null;
       
     if (!fallbackId) {
-      console.error("Cannot determine user ID from account:", account);
+      console.error("[AUTH-DEBUG] Cannot determine user ID from account:", account);
       return null;
     }
     
-    return {
+    const fallbackUserInfo = {
       username: account.username,
       name: account.name || account.username,
       email: account.username,
       userId: fallbackId,
       tenantId: account.tenantId || "unknown-tenant"
     };
+    
+    console.log("[AUTH-DEBUG] Using fallback user info:", fallbackUserInfo);
+    return fallbackUserInfo;
   }
   
   const userInfo = {
@@ -127,6 +139,6 @@ export const getUserInfo = (account) => {
     tenantId: account.tenantId
   };
   
-  console.log("Generated user info:", userInfo);
+  console.log("[AUTH-DEBUG] Generated user info:", userInfo);
   return userInfo;
 }; 
