@@ -1,7 +1,7 @@
 import React, { ReactNode, useEffect } from "react";
 import { MsalProvider, useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { PublicClientApplication, EventType, AccountInfo, InteractionStatus } from "@azure/msal-browser";
-import { msalConfig, loginRequest } from "./authConfig";
+import { msalConfig } from "./authConfig";
 
 // Initialize MSAL instance
 export const msalInstance = new PublicClientApplication(msalConfig);
