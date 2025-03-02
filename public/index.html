@@ -26,27 +26,38 @@
     -->
     <!-- Handle source map errors for MSAL and other libraries -->
     <script>
-      // Catch source map loading errors
+      // More comprehensive source map error handling
       window.addEventListener('error', function(event) {
-        if (event.filename && event.filename.endsWith('.map')) {
+        if (event.filename && (event.filename.endsWith('.map') || event.filename.includes('.map?'))) {
           // Prevent the error from showing in the console
           event.preventDefault();
-          console.log('Suppressed source map error for:', event.filename);
+          console.log('Suppressed source map error');
           return true;
         }
       }, true);
 
       // Override fetch for source maps to prevent 404 errors
       const originalFetch = window.fetch;
-      window.fetch = function(url, options) {
-        if (typeof url === 'string' && url.endsWith('.map')) {
+      window.fetch = function(resource, options) {
+        if ((typeof resource === 'string' && (resource.endsWith('.map') || resource.includes('.map?'))) ||
+            (resource instanceof Request && (resource.url.endsWith('.map') || resource.url.includes('.map?')))) {
           // Return a resolved promise with an empty response for source map requests
           return Promise.resolve(new Response('', {
             status: 200,
             headers: {'Content-Type': 'application/json'}
           }));
         }
-        return originalFetch(url, options);
+        return originalFetch(resource, options);
+      };
+
+      // Also handle XMLHttpRequest for source maps
+      const originalOpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(method, url, ...args) {
+        if (typeof url === 'string' && (url.endsWith('.map') || url.includes('.map?'))) {
+          // Redirect to an empty response to avoid 404 errors
+          url = 'data:application/json,{}';
+        }
+        return originalOpen.call(this, method, url, ...args);
       };
     </script>
     <title>Weekly Time Allocation</title>

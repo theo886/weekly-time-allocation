@@ -6,12 +6,16 @@ import { msalConfig, loginRequest } from "./authConfig";
 // Initialize MSAL instance
 export const msalInstance = new PublicClientApplication(msalConfig);
 
-// Handle the redirect response
-if (!window.location.hash.includes("error")) {
-  msalInstance.handleRedirectPromise().catch(error => {
+// Always handle redirects properly
+msalInstance.handleRedirectPromise()
+  .then(response => {
+    if (response) {
+      console.log("Redirect handling succeeded:", response);
+    }
+  })
+  .catch(error => {
     console.error("Redirect handling error:", error);
   });
-}
 
 // Default redirect behavior after login
 msalInstance.addEventCallback(event => {
