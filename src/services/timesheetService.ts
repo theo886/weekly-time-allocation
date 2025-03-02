@@ -10,15 +10,21 @@ const getToken = async (): Promise<string | null> => {
   try {
     const account = msalInstance.getActiveAccount();
     if (!account) {
-      throw new Error('No active account! Verify a user has been signed in and setActiveAccount has been called.');
+      console.warn('No active account! Proceeding without authentication token.');
+      return null;
     }
     
-    const tokenResponse = await msalInstance.acquireTokenSilent({
-      scopes: protectedResources.timeSheetApi.scopes,
-      account: account
-    });
-    
-    return tokenResponse.accessToken;
+    try {
+      const tokenResponse = await msalInstance.acquireTokenSilent({
+        scopes: protectedResources.timeSheetApi.scopes,
+        account: account
+      });
+      
+      return tokenResponse.accessToken;
+    } catch (tokenError) {
+      console.warn('Failed to get token, proceeding with unauthenticated request:', tokenError);
+      return null;
+    }
   } catch (error) {
     console.error('Failed to get token:', error);
     return null;
