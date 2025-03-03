@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Calendar, Plus, X, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, Plus, X, AlertCircle, Loader2, Info, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,6 +7,23 @@ import { Select } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { saveTimesheet, getTimesheets } from '../services/timesheetService';
 import { useCurrentUser, getUserInfo } from '../auth/AuthProvider';
+
+// Add PinIcon component
+const PinIcon = ({ isPinned }) => {
+  return isPinned ? (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18 4v2a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 14h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="19" r="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ) : (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="17" x2="12" y2="22"></line>
+      <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0-4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
+    </svg>
+  );
+};
 
 // Format date range for the week - moved outside the component since it doesn't depend on component state
 const formatWeekRange = (startDate) => {
@@ -45,8 +62,11 @@ const WeeklyPercentageTracker = () => {
 
   // State for project time entries
   const [entries, setEntries] = useState([
-    { id: Date.now(), projectId: "", percentage: "100", isManuallySet: false }
+    { id: Date.now(), projectId: "", percentage: "100", isManuallySet: false, isChanged: false }
   ]);
+
+  // Add isPinned state for the pin feature
+  const [isPinned, setIsPinned] = useState(false);
 
   // State for input validation and loading
   const [entryErrors, setEntryErrors] = useState({});
@@ -102,6 +122,12 @@ const WeeklyPercentageTracker = () => {
     
     // Generate a unique key for the current week and user
     const loadKey = `${weekId}_${userInfo.userId}`;
+    
+    // If pinned, skip data loading
+    if (isPinned) {
+      console.log('[COMPONENT-DEBUG] Pin mode active, using current entries');
+      return;
+    }
     
     // Check if we've already loaded data for this week and user
     if (loadedWeeks[loadKey]) {
@@ -194,7 +220,7 @@ const WeeklyPercentageTracker = () => {
       setIsLoading(false);
       isLoadingRef.current = false;
     }
-  }, [userInfo, weekId, loadedWeeks]);
+  }, [userInfo, weekId, loadedWeeks, isPinned]);
 
   // Load existing timesheet data when the week changes or user logs in
   useEffect(() => {
@@ -487,66 +513,70 @@ const WeeklyPercentageTracker = () => {
     return false;
   };
   
-  // Determine button properties based on state
-  const getButtonProps = () => {
-    if (isSaving) {
-      return {
-        disabled: true,
-        className: "bg-blue-600 hover:bg-blue-700",
-        children: (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Saving...
-          </>
-        )
-      };
-    }
-    
-    if (isButtonDisabled()) {
-      return {
-        disabled: true,
-        className: "bg-slate-400",
-        children: timesheetExists ? "Update Timesheet" : "Save Timesheet" 
-      };
-    }
-    
-    return {
-      disabled: false,
-      className: "bg-blue-600 hover:bg-blue-700",
-      children: timesheetExists ? "Update Timesheet" : "Save Timesheet"
-    };
-  };
-
-  // Add a function to reset loaded state when explicitly changing weeks
+  // Modified resetAndGoToPreviousWeek to handle pinned state
   const resetAndGoToPreviousWeek = () => {
+    // Get the current entries before changing the week
+    const currentEntries = [...entries];
+    
+    // Change the week
     goToPreviousWeek();
+    
     // Reset loaded state for the new week
     const newDate = new Date(currentWeek);
     newDate.setDate(newDate.getDate() - 7);
     const newWeekId = `${newDate.getFullYear()}-${(newDate.getMonth() + 1).toString().padStart(2, '0')}-${newDate.getDate().toString().padStart(2, '0')}`;
+    
     if (userInfo && userInfo.userId) {
       const loadKey = `${newWeekId}_${userInfo.userId}`;
-      setLoadedWeeks(prev => ({...prev, [loadKey]: false}));
+      setLoadedWeeks(prev => ({...prev, [loadKey]: isPinned}));
+      
+      // If pinned, don't fetch data but use current entries
+      if (isPinned) {
+        setEntries(currentEntries.map(entry => ({
+          ...entry,
+          id: Date.now() + Math.random(), // Generate new IDs
+          isChanged: true
+        })));
+        setTimesheetExists(false);
+        setExistingTimesheetId(null);
+      }
     }
   };
 
-  // Similar function for next week
+  // Modified resetAndGoToNextWeek to handle pinned state
   const resetAndGoToNextWeek = () => {
+    // Get the current entries before changing the week
+    const currentEntries = [...entries];
+    
+    // Change the week
     goToNextWeek();
+    
     // Reset loaded state for the new week
     const newDate = new Date(currentWeek);
     newDate.setDate(newDate.getDate() + 7);
     const newWeekId = `${newDate.getFullYear()}-${(newDate.getMonth() + 1).toString().padStart(2, '0')}-${newDate.getDate().toString().padStart(2, '0')}`;
+    
     if (userInfo && userInfo.userId) {
       const loadKey = `${newWeekId}_${userInfo.userId}`;
-      setLoadedWeeks(prev => ({...prev, [loadKey]: false}));
+      setLoadedWeeks(prev => ({...prev, [loadKey]: isPinned}));
+      
+      // If pinned, don't fetch data but use current entries
+      if (isPinned) {
+        setEntries(currentEntries.map(entry => ({
+          ...entry,
+          id: Date.now() + Math.random(), // Generate new IDs
+          isChanged: true
+        })));
+        setTimesheetExists(false);
+        setExistingTimesheetId(null);
+      }
     }
   };
 
   // Render loading state
   if (isLoading) {
     return (
-      <Card className="max-w-4xl mx-auto">
+      <Card className="max-w-2xl mx-auto">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-4" />
@@ -558,151 +588,201 @@ const WeeklyPercentageTracker = () => {
   }
 
   return (
-    <Card className="max-w-4xl mx-auto">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Weekly Time Allocation</CardTitle>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={resetAndGoToPreviousWeek}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m15 18-6-6 6-6"/></svg>
-          </Button>
-          <div className="flex items-center space-x-2 bg-slate-100 rounded-md px-3 py-1">
-            <Calendar className="h-4 w-4 text-slate-600" />
-            <span className="text-sm font-medium">{formatWeekRange(currentWeek)}</span>
+    <div className="max-w-2xl mx-auto p-4">
+      <Card>
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center text-indigo-800">
+              <Calendar className="h-5 w-5 mr-2 text-indigo-600" />
+              Weekly Time Allocation
+            </CardTitle>
           </div>
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={resetAndGoToNextWeek}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m9 18 6-6-6-6"/></svg>
-          </Button>
-        </div>
-      </CardHeader>
-      
-      <CardContent>
-        {/* Success message */}
-        {saveSuccess && (
-          <Alert className="mb-4 bg-green-50 border-green-200">
-            <AlertCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-600">
-              Timesheet saved successfully!
-            </AlertDescription>
-          </Alert>
-        )}
+        </CardHeader>
         
-        {/* Error message */}
-        {saveError && (
-          <Alert className="mb-4 bg-red-50 border-red-200">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-600">
-              {saveError}
-            </AlertDescription>
-          </Alert>
-        )}
-      
-        <div className="space-y-4">
-          {entries.map((entry, index) => (
-            <div
-              key={entry.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border rounded-lg relative"
+        <CardContent>
+          <div className="flex items-center justify-center mb-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsPinned(!isPinned)} 
+              className={`mr-2 ${isPinned ? 'text-amber-600' : 'text-slate-400'}`}
             >
-              <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Project
-                </label>
-                <Select
-                  value={entry.projectId}
-                  onChange={(e) => updateEntry(entry.id, 'projectId', e.target.value)}
-                  className={`${entryErrors[entry.id] && !entry.projectId ? 'border-red-500' : ''}`}
-                >
-                  <option value="">Select a project</option>
-                  {projects.map((project) => (
-                    <option 
-                      key={project.id} 
-                      value={project.id.toString()}
-                      disabled={entries.some(e => e.id !== entry.id && e.projectId === project.id.toString())}
-                    >
-                      {project.name} ({project.code})
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              
-              <div className="w-full sm:w-1/3">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Percentage
-                </label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    value={entry.percentage}
-                    onChange={(e) => updateEntry(entry.id, 'percentage', e.target.value)}
-                    className={`pr-8 ${
-                      entryErrors[entry.id] && (entry.percentage === "" || isNaN(parseFloat(entry.percentage)) || 
-                      parseFloat(entry.percentage) < 0 || parseFloat(entry.percentage) > 100) 
-                        ? 'border-red-500' 
-                        : ''
-                    }`}
-                  />
-                  <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">
-                    %
-                  </span>
+              <PinIcon isPinned={isPinned} />
+            </Button>
+            <span className="text-lg font-semibold text-slate-800">
+              Week of {formatWeekRange(currentWeek)}
+            </span>
+          </div>
+          
+          {/* Success message */}
+          {saveSuccess && (
+            <Alert className="mb-4 bg-green-50 border-green-200">
+              <AlertCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-600">
+                Timesheet saved successfully!
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Error message */}
+          {saveError && (
+            <Alert className="mb-4 bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-600">
+                {saveError}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Total percentage error */}
+          {totalError && (
+            <Alert className="mb-4 bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-600">
+                Total percentage must equal 100%
+              </AlertDescription>
+            </Alert>
+          )}
+        
+          <div className="space-y-3">
+            {entries.map((entry, index) => (
+              <div
+                key={entry.id}
+                className="grid grid-cols-12 gap-3 items-center"
+              >
+                <div className="col-span-8">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Project
+                  </label>
+                  <Select
+                    value={entry.projectId}
+                    onChange={(e) => updateEntry(entry.id, 'projectId', e.target.value)}
+                    className={`${entryErrors[entry.id] && !entry.projectId ? 'border-red-500' : ''}`}
+                  >
+                    <option value="">Select a project</option>
+                    {projects.map((project) => (
+                      <option 
+                        key={project.id} 
+                        value={project.id.toString()}
+                        disabled={entries.some(e => e.id !== entry.id && e.projectId === project.id.toString())}
+                      >
+                        {project.name} ({project.code})
+                      </option>
+                    ))}
+                  </Select>
                 </div>
+                
+                <div className="col-span-3">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Percentage
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={entry.percentage}
+                      onChange={(e) => updateEntry(entry.id, 'percentage', e.target.value)}
+                      className={`pr-8 ${
+                        entryErrors[entry.id] && (entry.percentage === "" || isNaN(parseFloat(entry.percentage)) || 
+                        parseFloat(entry.percentage) < 0 || parseFloat(entry.percentage) > 100) 
+                          ? 'border-red-500' 
+                          : ''
+                      }`}
+                    />
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">
+                      %
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="col-span-1 flex justify-end">
+                  {entries.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => removeEntry(entry.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                
+                {entryErrors[entry.id] && (
+                  <p className="col-span-12 text-red-500 text-xs mt-1">
+                    {entryErrors[entry.id]}
+                  </p>
+                )}
               </div>
-              
-              {entries.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 sm:static h-8 w-8 sm:self-end"
-                  onClick={() => removeEntry(entry.id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-              
-              {entryErrors[entry.id] && (
-                <p className="text-red-500 text-xs mt-1 absolute bottom-1 left-3">
-                  {entryErrors[entry.id]}
-                </p>
-              )}
-            </div>
-          ))}
-          
-          <Button
-            variant="outline"
-            className="w-full mt-2"
-            onClick={addEntry}
-          >
-            <Plus className="h-4 w-4 mr-2" /> Add Project
-          </Button>
-          
-          <div className="flex justify-between items-center pt-4 border-t">
-            <div className="font-medium">Total</div>
-            <div className={`font-bold text-lg ${totalError ? 'text-red-500' : 'text-blue-600'}`}>
-              {totalPercentage}%
+            ))}
+            
+            {/* Add button below the last entry */}
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                className="w-full border border-dashed border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                onClick={addEntry}
+              >
+                <div className="flex items-center justify-center">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Project
+                </div>
+              </Button>
             </div>
           </div>
           
-          {totalError && (
-            <p className="text-red-500 text-sm mt-1">
-              Total percentage must equal 100%
-            </p>
-          )}
-        </div>
-      </CardContent>
-      
-      <CardFooter className="flex justify-end">
-        <Button
-          onClick={submitTimesheet}
-          {...getButtonProps()}
-        />
-      </CardFooter>
-    </Card>
+          <div className="mt-6 pt-4 border-t flex justify-between items-center">
+            <Button 
+              variant="ghost" 
+              className="text-slate-600 flex items-center" 
+              onClick={resetAndGoToPreviousWeek}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
+              <span>Prev</span>
+            </Button>
+            
+            <div className="flex items-center font-medium">
+              <span className="mr-2">Total:</span>
+              <span className={totalError ? "text-red-600" : "text-green-600"}>
+                {totalPercentage}%
+              </span>
+            </div>
+            
+            <Button 
+              variant="ghost" 
+              className="text-slate-600 flex items-center" 
+              onClick={resetAndGoToNextWeek}
+            >
+              <span>Next</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </Button>
+          </div>
+        </CardContent>
+        
+        <CardFooter className="bg-slate-50 border-t p-4 h-20 flex justify-center items-center">
+          <Button
+            onClick={submitTimesheet}
+            disabled={isButtonDisabled()}
+            className={`px-8 py-2 rounded ${
+              isButtonDisabled() ? 
+              'bg-slate-400 text-white' : 
+              'bg-indigo-600 hover:bg-indigo-700 text-white'
+            }`}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              timesheetExists ? "Update Timesheet" : "Save Timesheet"
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 };
 
