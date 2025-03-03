@@ -317,10 +317,10 @@ const WeeklyPercentageTracker = () => {
             return entry;
           }
           
-          // Mark as manually set if percentage changes
-          return { ...entry, [field]: value, isManuallySet: true };
+          // Mark as changed
+          return { ...entry, [field]: value, isManuallySet: true, isChanged: true };
         }
-        return { ...entry, [field]: value };
+        return { ...entry, [field]: value, isChanged: true };
       }
       return entry;
     });
@@ -444,6 +444,12 @@ const WeeklyPercentageTracker = () => {
         const loadKey = `${weekId}_${userInfo.userId}`;
         setLoadedWeeks(prev => ({...prev, [loadKey]: false}));
         
+        // Mark all entries as not changed
+        setEntries(entries.map(entry => ({
+          ...entry,
+          isChanged: false
+        })));
+        
         // Clear success message after 3 seconds
         setTimeout(() => {
           setSaveSuccess(false);
@@ -457,6 +463,30 @@ const WeeklyPercentageTracker = () => {
     }
   };
 
+  // Check if the save button should be disabled
+  const isButtonDisabled = () => {
+    // Disabled if any entry has errors
+    if (Object.keys(entryErrors).length > 0) return true;
+    
+    // Disabled if total percentage isn't 100%
+    if (Math.round(totalPercentage) !== 100) return true;
+    
+    // Disabled if any entry doesn't have a project selected
+    if (entries.some(entry => !entry.projectId)) return true;
+    
+    // Disabled if there are duplicate project selections
+    const projectIds = entries.map(entry => entry.projectId).filter(id => id);
+    if (new Set(projectIds).size !== projectIds.length) return true;
+    
+    // Disabled if no user is logged in
+    if (!userInfo) return true;
+    
+    // If this is an existing timesheet and nothing has changed, disable the button
+    if (timesheetExists && !entries.some(entry => entry.isChanged)) return true;
+    
+    return false;
+  };
+  
   // Determine button properties based on state
   const getButtonProps = () => {
     if (isSaving) {
@@ -476,7 +506,7 @@ const WeeklyPercentageTracker = () => {
       return {
         disabled: true,
         className: "bg-slate-400",
-        children: "Save Timesheet" 
+        children: timesheetExists ? "Update Timesheet" : "Save Timesheet" 
       };
     }
     
@@ -485,23 +515,6 @@ const WeeklyPercentageTracker = () => {
       className: "bg-blue-600 hover:bg-blue-700",
       children: timesheetExists ? "Update Timesheet" : "Save Timesheet"
     };
-  };
-
-  // Check if the save button should be disabled
-  const isButtonDisabled = () => {
-    // Disabled if any entry has errors
-    if (Object.keys(entryErrors).length > 0) return true;
-    
-    // Disabled if total percentage isn't 100%
-    if (Math.round(totalPercentage) !== 100) return true;
-    
-    // Disabled if any entry doesn't have a project selected
-    if (entries.some(entry => !entry.projectId)) return true;
-    
-    // Disabled if no user is logged in
-    if (!userInfo) return true;
-    
-    return false;
   };
 
   // Add a function to reset loaded state when explicitly changing weeks
