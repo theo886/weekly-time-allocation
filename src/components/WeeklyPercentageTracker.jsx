@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Calendar, Plus, X, AlertCircle, Loader2, Info, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { Calendar, Plus, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
