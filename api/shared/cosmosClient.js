@@ -3,8 +3,8 @@ const { CosmosClient } = require('@azure/cosmos');
 // Get configuration from environment variables
 const endpoint = process.env.COSMOS_ENDPOINT;
 const key = process.env.COSMOS_KEY;
-const databaseId = process.env.COSMOS_DATABASE || "TimeAllocation";
-const containerId = process.env.COSMOS_CONTAINER || "Timesheets";
+const databaseId = process.env.COSMOS_DATABASE || "Timesheets";
+const containerId = process.env.COSMOS_CONTAINER || "TimeAllocation";
 
 // Create a single client instance that will be reused
 const client = endpoint && key ? new CosmosClient({ endpoint, key }) : null;
