@@ -61,7 +61,7 @@ A web application for tracking and managing weekly time allocations across diffe
    - Get the deployment token 
    - Add it to your GitHub repository as a secret named `AZURE_STATIC_WEB_APPS_API_TOKEN`
 
-2. **Configure environment variables**
+2. **Configure environmennt variables**
    - In Azure Portal, add the Cosmos DB connection details as application settings:
      - COSMOS_ENDPOINT
      - COSMOS_KEY
