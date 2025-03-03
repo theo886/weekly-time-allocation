@@ -4,14 +4,25 @@ import { Calendar, Plus, X, AlertCircle } from 'lucide-react';
 const WeeklyPercentageTracker = () => {
   // Sample projects data
   const projects = [
-    { id: 1, name: "Website Redesign", code: "WEB-001" },
-    { id: 2, name: "Mobile App Development", code: "APP-002" },
-    { id: 3, name: "Internal Dashboard", code: "DASH-003" },
-    { id: 4, name: "Client Onboarding System", code: "CL-004" },
-    { id: 5, name: "Infrastructure Upgrade", code: "INF-005" },
-    { id: 6, name: "Data Migration", code: "DM-006" },
-    { id: 7, name: "Security Audit", code: "SEC-007" },
-    { id: 8, name: "Training & Documentation", code: "TD-008" }
+    { id: "CP000022", name: "General R&D Infrastructure" },
+    { id: "CP000038", name: "Skid Changeover Costs" },
+    { id: "CP000039", name: "Unapplied Engineering Time" },
+    { id: "MS000002", name: "PH-G Series" },
+    { id: "PE000005", name: "ENG MFG Support" },
+    { id: "RD000026", name: "Sage Geosystems" },
+    { id: "RD000027", name: "PAXTER3 - FXE V1" },
+    { id: "RD000042", name: "PX-G 1300 Product Support" },
+    { id: "RD000043", name: "PG Centrifolds" },
+    { id: "RD000047", name: "PX Power Train II" },
+    { id: "RD000048", name: "DOE - HP Heat Pump" },
+    { id: "VQ000008", name: "Water Sales Support" },
+    { id: "VQ000009", name: "PX, Turbo, Pump, Support" },
+    { id: "VQ000010", name: "PX part reduction, PX cost reduction" },
+    { id: "VQ000011", name: "HP pump improvements" },
+    { id: "VQ000012", name: "ICAR/Product Improvements" },
+    { id: "VQ000013", name: "PX Dual Development" },
+    { id: "WI000004", name: "Aquabold Improvements" },
+    { id: "WI000023", name: "Turbo 54 550 and 875" }
   ];
 
   // State for the current week
@@ -552,22 +563,22 @@ const WeeklyPercentageTracker = () => {
           onClick={toggleOpen}
         >
           <span className="text-gray-500">
-            {value ? projects.find(p => p.id.toString() === value)?.name || "Select Project" : "Select Project"}
+            {value ? projects.find(p => p.id === value)?.name || "Select Project" : "Select Project"}
           </span>
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4.5 6.5L7.5 9.5L10.5 6.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
         {isOpen && (
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+          <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
             <div className="py-1">
               {projects.map(project => (
                 <div 
                   key={project.id}
                   className="px-3 py-2 hover:bg-slate-100 cursor-pointer"
-                  onClick={() => handleSelect(project.id.toString())}
+                  onClick={() => handleSelect(project.id)}
                 >
-                  {project.name} ({project.code})
+                  {project.id} - {project.name}
                 </div>
               ))}
             </div>
