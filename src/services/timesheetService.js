@@ -75,10 +75,26 @@ export async function getTimesheets(userInfo) {
       return [];
     }
     
-    // Clear the cache for this user to ensure fresh data
+    // Check if we have cache for this user
     const cacheKey = `timesheets_${userInfo.userId}`;
-    sessionStorage.removeItem(cacheKey);
-    console.log('[TIMESHEET-DEBUG] Cleared cache explicitly for key:', cacheKey);
+    const cachedData = sessionStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      try {
+        const parsedData = JSON.parse(cachedData);
+        // If we have cache that indicates empty data, use it
+        if (parsedData && parsedData.isEmpty === true) {
+          console.log('[TIMESHEET-DEBUG] Using cached empty data for user:', userInfo.userId);
+          return [];
+        }
+        // Otherwise, for non-empty data, we'll refetch to ensure freshness
+        console.log('[TIMESHEET-DEBUG] Found cached data but refetching for freshness');
+      } catch (e) {
+        console.warn('[TIMESHEET-DEBUG] Error parsing cached data:', e);
+        // Clear invalid cache
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
     
     const headers = await getAuthHeaders();
     console.log('[TIMESHEET-DEBUG] Auth headers obtained:', headers.Authorization ? 'Authorization header present' : 'No Authorization header');
@@ -119,6 +135,20 @@ export async function getTimesheets(userInfo) {
         return [];
       }
       
+      // Cache the result - if it's empty, specially mark it
+      if (data.timesheets && data.timesheets.length === 0) {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ isEmpty: true, timestamp: Date.now() }));
+        console.log('[TIMESHEET-DEBUG] Cached empty results for user:', userInfo.userId);
+      } else {
+        // For non-empty data, we'll store it but won't rely on this cache for future fetches
+        sessionStorage.setItem(cacheKey, JSON.stringify({ 
+          isEmpty: false, 
+          timestamp: Date.now(),
+          count: data.timesheets.length
+        }));
+        console.log('[TIMESHEET-DEBUG] Cached metadata for', data.timesheets.length, 'timesheets');
+      }
+      
       console.log('[TIMESHEET-DEBUG] Returning timesheets:', JSON.stringify(data.timesheets));
       return data.timesheets || [];
     } catch (fetchError) {
@@ -140,6 +170,13 @@ export async function getTimesheets(userInfo) {
 // Save a timesheet with user information
 export async function saveTimesheet(timesheet, userInfo) {
   try {
+    // Clear any cached data for this user
+    if (userInfo && userInfo.userId) {
+      const cacheKey = `timesheets_${userInfo.userId}`;
+      sessionStorage.removeItem(cacheKey);
+      console.log('[TIMESHEET-DEBUG] Cleared cache for user before saving:', userInfo.userId);
+    }
+    
     const headers = await getAuthHeaders();
     
     // Ensure user information is included in the timesheet

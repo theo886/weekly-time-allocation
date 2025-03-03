@@ -57,6 +57,8 @@ const WeeklyPercentageTracker = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [timesheetExists, setTimesheetExists] = useState(false);
   const [existingTimesheetId, setExistingTimesheetId] = useState(null);
+  // Add a state to track loaded weeks to prevent repeated requests
+  const [loadedWeeks, setLoadedWeeks] = useState({});
   
   // Use a ref to track if we're currently loading data
   const isLoadingRef = useRef(false);
@@ -98,6 +100,15 @@ const WeeklyPercentageTracker = () => {
       return;
     }
     
+    // Generate a unique key for the current week and user
+    const loadKey = `${weekId}_${userInfo.userId}`;
+    
+    // Check if we've already loaded data for this week and user
+    if (loadedWeeks[loadKey]) {
+      console.log('[COMPONENT-DEBUG] Already loaded data for week:', weekId, 'and user:', userInfo.userId);
+      return;
+    }
+    
     // Debug the userInfo object fully
     console.log('[COMPONENT-DEBUG] handleLoadTimesheets with userInfo:', JSON.stringify(userInfo, null, 2));
     
@@ -127,6 +138,12 @@ const WeeklyPercentageTracker = () => {
       console.log('[COMPONENT-DEBUG] Calling getTimesheets with userInfo:', JSON.stringify(userInfo, null, 2));
       const timesheets = await getTimesheets(userInfo);
       console.log('[COMPONENT-DEBUG] Timesheets received:', JSON.stringify(timesheets));
+      
+      // Mark this week and user combination as loaded
+      setLoadedWeeks(prev => ({
+        ...prev,
+        [loadKey]: true
+      }));
       
       // If the user ID changed during the fetch, discard the results
       if (userIdRef.current !== userInfo.userId) {
@@ -177,7 +194,7 @@ const WeeklyPercentageTracker = () => {
       setIsLoading(false);
       isLoadingRef.current = false;
     }
-  }, [userInfo, weekId]);
+  }, [userInfo, weekId, loadedWeeks]);
 
   // Load existing timesheet data when the week changes or user logs in
   useEffect(() => {
@@ -423,6 +440,10 @@ const WeeklyPercentageTracker = () => {
         setExistingTimesheetId(result.id);
         setTimesheetExists(true);
         
+        // After successful save, reset the loaded state for this week to allow refreshing data
+        const loadKey = `${weekId}_${userInfo.userId}`;
+        setLoadedWeeks(prev => ({...prev, [loadKey]: false}));
+        
         // Clear success message after 3 seconds
         setTimeout(() => {
           setSaveSuccess(false);
@@ -483,6 +504,32 @@ const WeeklyPercentageTracker = () => {
     return false;
   };
 
+  // Add a function to reset loaded state when explicitly changing weeks
+  const resetAndGoToPreviousWeek = () => {
+    goToPreviousWeek();
+    // Reset loaded state for the new week
+    const newDate = new Date(currentWeek);
+    newDate.setDate(newDate.getDate() - 7);
+    const newWeekId = `${newDate.getFullYear()}-${(newDate.getMonth() + 1).toString().padStart(2, '0')}-${newDate.getDate().toString().padStart(2, '0')}`;
+    if (userInfo && userInfo.userId) {
+      const loadKey = `${newWeekId}_${userInfo.userId}`;
+      setLoadedWeeks(prev => ({...prev, [loadKey]: false}));
+    }
+  };
+
+  // Similar function for next week
+  const resetAndGoToNextWeek = () => {
+    goToNextWeek();
+    // Reset loaded state for the new week
+    const newDate = new Date(currentWeek);
+    newDate.setDate(newDate.getDate() + 7);
+    const newWeekId = `${newDate.getFullYear()}-${(newDate.getMonth() + 1).toString().padStart(2, '0')}-${newDate.getDate().toString().padStart(2, '0')}`;
+    if (userInfo && userInfo.userId) {
+      const loadKey = `${newWeekId}_${userInfo.userId}`;
+      setLoadedWeeks(prev => ({...prev, [loadKey]: false}));
+    }
+  };
+
   // Render loading state
   if (isLoading) {
     return (
@@ -505,7 +552,7 @@ const WeeklyPercentageTracker = () => {
           <Button 
             variant="outline" 
             size="icon"
-            onClick={goToPreviousWeek}
+            onClick={resetAndGoToPreviousWeek}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m15 18-6-6 6-6"/></svg>
           </Button>
@@ -516,7 +563,7 @@ const WeeklyPercentageTracker = () => {
           <Button 
             variant="outline" 
             size="icon"
-            onClick={goToNextWeek}
+            onClick={resetAndGoToNextWeek}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m9 18 6-6-6-6"/></svg>
           </Button>
