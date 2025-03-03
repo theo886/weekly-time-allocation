@@ -1,4 +1,4 @@
-const { CosmosClient } = require("@azure/cosmos");
+const cosmosClient = require('../shared/cosmosClient');
 
 /**
  * Azure Function to save a timesheet
@@ -46,58 +46,58 @@ const httpTrigger = async function (context, req) {
     timesheet.createdAt = timesheet.createdAt || new Date().toISOString();
     timesheet.updatedAt = new Date().toISOString();
     
-    // In a real app, you would get these from environment variables
-    const endpoint = process.env.COSMOS_ENDPOINT || "";
-    const key = process.env.COSMOS_KEY || "";
-    const databaseId = process.env.COSMOS_DATABASE || "TimeAllocation";
-    const containerId = process.env.COSMOS_CONTAINER || "Timesheets";
-    
-    if (!endpoint || !key) {
+    // Validate the Cosmos DB configuration
+    if (!cosmosClient.validateConfig()) {
+      context.log.error('Database connection information not configured correctly');
       context.res = {
         status: 500,
-        body: "Database connection information not configured"
+        body: "Database connection configuration is missing or incomplete"
       };
       return;
     }
     
-    // Connect to CosmosDB
-    const client = new CosmosClient({ endpoint, key });
-    const database = client.database(databaseId);
-    const container = database.container(containerId);
-    
-    // Try to get the existing item first (for update vs. create)
-    const { resource: existingItem } = await container.item(timesheet.id).read().catch(() => ({ resource: undefined }));
-    
-    // If the item exists but is owned by a different user, deny the request
-    if (existingItem && existingItem.userId !== userId) {
-      context.res = {
-        status: 403,
-        body: "You do not have permission to modify this timesheet"
-      };
-      return;
-    }
-    
-    let result;
-    if (existingItem) {
-      // Update the existing item
-      result = await container.item(timesheet.id).replace(timesheet);
-      context.log(`Updated timesheet with id: ${timesheet.id}`);
-    } else {
-      // Create a new item
-      result = await container.items.create(timesheet);
-      context.log(`Created new timesheet with id: ${timesheet.id}`);
-    }
-    
-    context.res = {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: {
-        id: timesheet.id,
-        message: existingItem ? "Timesheet updated successfully" : "Timesheet created successfully"
+    try {
+      // Get container using our centralized client
+      const container = await cosmosClient.getContainer();
+      context.log(`Connected to container: ${cosmosClient.containerId}`);
+      
+      // Try to get the existing item first (for update vs. create)
+      const { resource: existingItem } = await container.item(timesheet.id).read().catch(() => ({ resource: undefined }));
+      
+      // If the item exists but is owned by a different user, deny the request
+      if (existingItem && existingItem.userId !== userId) {
+        context.res = {
+          status: 403,
+          body: "You do not have permission to modify this timesheet"
+        };
+        return;
       }
-    };
+      
+      let result;
+      if (existingItem) {
+        // Update the existing item
+        result = await container.item(timesheet.id).replace(timesheet);
+        context.log(`Updated timesheet with id: ${timesheet.id}`);
+      } else {
+        // Create a new item
+        result = await container.items.create(timesheet);
+        context.log(`Created new timesheet with id: ${timesheet.id}`);
+      }
+      
+      context.res = {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: {
+          id: timesheet.id,
+          message: existingItem ? "Timesheet updated successfully" : "Timesheet created successfully"
+        }
+      };
+    } catch (dbError) {
+      context.log.error(`Error with database operation: ${dbError.message}`);
+      throw dbError;
+    }
   } catch (error) {
     context.log.error("Error saving timesheet:", error);
     context.res = {

@@ -69,110 +69,69 @@ const getAuthHeaders = async () => {
 // Get timesheets for the current user
 export async function getTimesheets(userInfo) {
   try {
-    console.log('[TIMESHEET-DEBUG] getTimesheets called with:', JSON.stringify(userInfo, null, 2));
-    
     // Ensure userInfo is valid
     if (!userInfo || !userInfo.userId) {
       console.error('[TIMESHEET-DEBUG] Invalid userInfo passed to getTimesheets:', userInfo);
       return [];
     }
     
-    // Check for the problematic hardcoded user ID
-    if (userInfo.userId === 'user1_3-1-2023-3-7-2023') {
-      console.warn('[TIMESHEET-DEBUG] Detected problematic hardcoded user ID. This appears to be a test ID and should not be used.');
-      return []; // Return empty array for this special case
-    }
-
-    // Additional check - if the userId contains "user1", log a warning as it might be test data
-    if (userInfo.userId && userInfo.userId.includes('user1')) {
-      console.warn('[TIMESHEET-DEBUG] userId contains "user1", which might indicate test data:', userInfo.userId);
-    }
-    
-    // Create a cache key for this specific user
+    // Clear the cache for this user to ensure fresh data
     const cacheKey = `timesheets_${userInfo.userId}`;
-    console.log('[TIMESHEET-DEBUG] Using cache key:', cacheKey);
-    
-    // Check for cached data to prevent excessive fetching
-    sessionStorage.removeItem(cacheKey); // Explicitly clear cache before fetching
+    sessionStorage.removeItem(cacheKey);
     console.log('[TIMESHEET-DEBUG] Cleared cache explicitly for key:', cacheKey);
-
+    
     const headers = await getAuthHeaders();
     console.log('[TIMESHEET-DEBUG] Auth headers obtained:', headers.Authorization ? 'Authorization header present' : 'No Authorization header');
     
     // Add detailed logging about the user info
-    console.log('[TIMESHEET-DEBUG] Fetching timesheets with user info:', JSON.stringify(userInfo));
+    console.log('[TIMESHEET-DEBUG] Fetching timesheets with user info:', JSON.stringify(userInfo, null, 2));
     
     // Create an AbortController with a timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
     // Log the API URL being called
-    const apiUrl = `${API_BASE_URL}/timesheets?userId=${userInfo.userId}`;
+    const apiUrl = `/api/timesheets?userId=${userInfo.userId}`;
     console.log('[TIMESHEET-DEBUG] Calling API URL:', apiUrl);
     
     try {
-      // Add a try-catch specifically for fetch to better handle CORS errors
-      try {
-        const response = await fetch(apiUrl, {
-          headers,
-          signal: controller.signal,
-          // Add explicit mode credentials
-          mode: 'cors',
-          credentials: 'same-origin'
-        });
-        
-        clearTimeout(timeoutId);
-        console.log('[TIMESHEET-DEBUG] API response status:', response.status, response.statusText);
-        
-        if (!response.ok) {
-          throw new Error(`Error fetching timesheets: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('[TIMESHEET-DEBUG] Raw API response:', JSON.stringify(data));
-        
-        // Cache the result
-        sessionStorage.setItem(cacheKey, JSON.stringify({
-          timesheets: data.timesheets || [],
-          timestamp: Date.now()
-        }));
-        
-        console.log('[TIMESHEET-DEBUG] Returning timesheets:', JSON.stringify(data.timesheets || []));
-        return data.timesheets || [];
-      } catch (corsError) {
-        console.error('[TIMESHEET-DEBUG] Possible CORS or network error:', corsError);
-        
-        // If we get a CORS error and we're in production, try with a relative URL
-        if (window.location.hostname !== 'localhost' && apiUrl.includes('https://')) {
-          console.log('[TIMESHEET-DEBUG] Attempting fallback to relative URL due to CORS issue');
-          const relativeUrl = `/api/timesheets?userId=${userInfo.userId}`;
-          
-          const relativeResponse = await fetch(relativeUrl, {
-            headers,
-            signal: controller.signal
-          });
-          
-          if (!relativeResponse.ok) {
-            throw new Error(`Error fetching timesheets with relative URL: ${relativeResponse.statusText}`);
-          }
-          
-          const data = await relativeResponse.json();
-          console.log('[TIMESHEET-DEBUG] Relative URL API response:', JSON.stringify(data));
-          
-          return data.timesheets || [];
-        }
-        
-        throw corsError;
+      const response = await fetch(apiUrl, {
+        headers,
+        signal: controller.signal,
+        credentials: 'same-origin'
+      });
+      
+      clearTimeout(timeoutId);
+      console.log('[TIMESHEET-DEBUG] API response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[TIMESHEET-DEBUG] API error response:', errorText);
+        throw new Error(`Error fetching timesheets: ${response.statusText} - ${errorText}`);
       }
+      
+      const data = await response.json();
+      console.log('[TIMESHEET-DEBUG] Raw API response:', JSON.stringify(data));
+      
+      // Make sure we have a valid response structure
+      if (!data || !data.timesheets) {
+        console.warn('[TIMESHEET-DEBUG] Unexpected API response format. Expected { timesheets: [] }');
+        return [];
+      }
+      
+      console.log('[TIMESHEET-DEBUG] Returning timesheets:', JSON.stringify(data.timesheets));
+      return data.timesheets || [];
     } catch (fetchError) {
       if (fetchError.name === 'AbortError') {
-        console.warn('Fetch request timed out after 10 seconds');
+        console.warn('[TIMESHEET-DEBUG] Fetch request timed out after 10 seconds');
         return []; // Return empty array on timeout
       }
+      
+      console.error('[TIMESHEET-DEBUG] Fetch error:', fetchError);
       throw fetchError;
     }
   } catch (error) {
-    console.error('Failed to fetch timesheets:', error);
+    console.error('[TIMESHEET-DEBUG] Failed to fetch timesheets:', error);
     // Return empty array instead of throwing to prevent cascade of errors
     return [];
   }

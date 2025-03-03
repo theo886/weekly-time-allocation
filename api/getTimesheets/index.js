@@ -1,4 +1,4 @@
-const { CosmosClient } = require("@azure/cosmos");
+const cosmosClient = require('../shared/cosmosClient');
 
 /**
  * Azure Function to get timesheets for a user
@@ -34,50 +34,56 @@ const httpTrigger = async function (context, req) {
       return;
     }
     
-    // In a real app, you would get these from environment variables
-    const endpoint = process.env.COSMOS_ENDPOINT || "";
-    const key = process.env.COSMOS_KEY || "";
-    const databaseId = process.env.COSMOS_DATABASE || "TimeAllocation";
-    const containerId = process.env.COSMOS_CONTAINER || "Timesheets";
-    
-    if (!endpoint || !key) {
-      context.log.error('Database connection information not configured');
+    // Validate the Cosmos DB configuration
+    if (!cosmosClient.validateConfig()) {
+      context.log.error('Database connection information not configured correctly');
       context.res = {
         status: 500,
-        body: "Database connection information not configured"
+        body: "Database connection configuration is missing or incomplete"
       };
       return;
     }
     
-    // Connect to CosmosDB
-    const client = new CosmosClient({ endpoint, key });
-    const database = client.database(databaseId);
-    const container = database.container(containerId);
-    
-    // Query for all timesheets for the given user
-    const querySpec = {
-      query: "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.weekStarting DESC",
-      parameters: [
-        {
-          name: "@userId",
-          value: userId
-        }
-      ]
-    };
-    
-    context.log(`Executing query for user ${userId}: ${querySpec.query}`);
-    const { resources: timesheets } = await container.items.query(querySpec).fetchAll();
-    context.log(`Found ${timesheets.length} timesheets for user ${userId}`);
-    
-    context.res = {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: {
-        timesheets: timesheets
+    try {
+      // Get container using our centralized client
+      const container = await cosmosClient.getContainer();
+      context.log(`Connected to container: ${cosmosClient.containerId}`);
+      
+      // Query for all timesheets for the given user
+      const querySpec = {
+        query: "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.weekStarting DESC",
+        parameters: [
+          {
+            name: "@userId",
+            value: userId
+          }
+        ]
+      };
+      
+      context.log(`Executing query for user ${userId}: ${querySpec.query}`);
+      const { resources: timesheets } = await container.items.query(querySpec).fetchAll();
+      context.log(`Found ${timesheets.length} timesheets for user ${userId}`);
+      
+      // For debugging, log the actual timesheets
+      if (timesheets.length === 0) {
+        context.log('No timesheets found for this user. Returning empty array.');
+      } else {
+        context.log(`First timesheet: ${JSON.stringify(timesheets[0])}`);
       }
-    };
+      
+      context.res = {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: {
+          timesheets: timesheets
+        }
+      };
+    } catch (dbError) {
+      context.log.error(`Error with database operation: ${dbError.message}`);
+      throw dbError;
+    }
   } catch (error) {
     context.log.error("Error fetching timesheets:", error);
     context.res = {
