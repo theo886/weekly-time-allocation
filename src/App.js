@@ -1,6 +1,7 @@
 import React from 'react';
 import WeeklyPercentageTracker from './components/WeeklyPercentageTracker';
 import DatabaseTest from './components/DatabaseTest';
+import DiagnosticsView from './components/DiagnosticsView';
 
 function App() {
   return (
@@ -11,6 +12,11 @@ function App() {
         {/* Database Test Component */}
         <div className="mb-8">
           <DatabaseTest />
+        </div>
+        
+        {/* Diagnostics Component */}
+        <div className="mb-8">
+          <DiagnosticsView />
         </div>
         
         {/* Main Application Component */}

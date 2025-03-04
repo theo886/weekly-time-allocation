@@ -5,19 +5,34 @@ const DatabaseTest = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState({
+    apiCalled: false,
+    responseReceived: false,
+    timestamp: null,
+    isDevelopment: process.env.NODE_ENV === 'development'
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setDebugInfo(prev => ({ ...prev, apiCalled: true, timestamp: new Date().toISOString() }));
+        
+        console.log('🔍 DatabaseTest: Calling getTimesheets()...');
         const result = await getTimesheets();
         
+        console.log('🔍 DatabaseTest: Received result:', result);
+        setDebugInfo(prev => ({ ...prev, responseReceived: true }));
+        
         if (result.error) {
+          console.error('❌ DatabaseTest: Error in result:', result.error);
           setError(result.error);
         } else {
+          console.log(`🔍 DatabaseTest: Setting data, ${Array.isArray(result) ? result.length : 0} items`);
           setData(result);
         }
       } catch (err) {
+        console.error('❌ DatabaseTest: Exception caught:', err);
         setError('An error occurred while fetching data: ' + err.message);
       } finally {
         setLoading(false);
@@ -27,11 +42,26 @@ const DatabaseTest = () => {
     fetchData();
   }, []);
 
+  const renderDebugInfo = () => (
+    <div className="mt-4 p-4 bg-gray-100 rounded text-xs font-mono">
+      <h3 className="font-bold mb-2">Debug Information:</h3>
+      <ul className="space-y-1">
+        <li>Environment: {debugInfo.isDevelopment ? 'Development' : 'Production'}</li>
+        <li>API Called: {debugInfo.apiCalled ? '✅' : '❌'}</li>
+        <li>Response Received: {debugInfo.responseReceived ? '✅' : '❌'}</li>
+        <li>Timestamp: {debugInfo.timestamp}</li>
+        <li>Data Type: {data ? (Array.isArray(data) ? 'Array' : typeof data) : 'null'}</li>
+        <li>Data Length: {Array.isArray(data) ? data.length : 'N/A'}</li>
+      </ul>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="bg-white p-4 rounded shadow">
         <h2 className="text-xl font-bold mb-2">Database Connection Test</h2>
         <p>Loading data...</p>
+        {renderDebugInfo()}
       </div>
     );
   }
@@ -44,6 +74,7 @@ const DatabaseTest = () => {
           <p><strong>Error:</strong> {error}</p>
           <p className="mt-2">Please check your database configuration.</p>
         </div>
+        {renderDebugInfo()}
       </div>
     );
   }
@@ -80,6 +111,8 @@ const DatabaseTest = () => {
       ) : (
         <p>No data found in the database. Add some records to see them here.</p>
       )}
+      
+      {renderDebugInfo()}
     </div>
   );
 };
