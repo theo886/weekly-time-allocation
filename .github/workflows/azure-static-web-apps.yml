@@ -34,14 +34,67 @@ jobs:
         run: |
           npm install
           cd api && npm install && cd ..
+      
+      # Create a marker file to force Node.js detection
+      - name: Prepare API structure for deployment
+        run: |
+          echo "Setting up Azure Functions for Node.js detection..."
+          # Create a local.settings.json file customized for deployment
+          cat > api/local.settings.json << 'EOL'
+          {
+            "IsEncrypted": false,
+            "Values": {
+              "FUNCTIONS_WORKER_RUNTIME": "node",
+              "WEBSITE_NODE_DEFAULT_VERSION": "~18",
+              "AzureWebJobsStorage": ""
+            }
+          }
+          EOL
           
-      # Add debug step to verify API structure
+          # Make sure package.json has all necessary fields
+          cat > api/package.json << 'EOL'
+          {
+            "name": "weekly-time-allocation-api",
+            "version": "1.0.0",
+            "description": "Azure Functions API for Weekly Time Allocation app",
+            "main": "index.js",
+            "scripts": {
+              "start": "func start",
+              "test": "echo \"No tests specified\""
+            },
+            "engines": {
+              "node": ">=18.0.0"
+            },
+            "dependencies": {
+              "@azure/cosmos": "^3.17.3"
+            },
+            "devDependencies": {
+              "azure-functions-core-tools": "^4.0.5344"
+            }
+          }
+          EOL
+          
+          # Add a README to explicitly document the node.js function app
+          cat > api/README.md << 'EOL'
+          # Node.js Azure Functions App
+          This is a Node.js Azure Functions app for the Weekly Time Allocation application.
+          EOL
+          
+      # Enhanced debug step with detailed output
       - name: Debug API structure
         run: |
           echo "API directory contents:"
           ls -la api/
           echo "API package.json:"
           cat api/package.json
+          echo "API host.json:"
+          cat api/host.json
+          echo "API local.settings.json:"
+          cat api/local.settings.json
+          echo "Node version:"
+          node --version
+          echo "NPM version:"
+          npm --version
           
       - name: Build And Deploy
         id: builddeploy
@@ -49,22 +102,26 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          app_location: "/" # App source code path
-          api_location: "api" # API source code path 
-          output_location: "build" # Built app content directory
+          app_location: "/" 
+          api_location: "api"
+          output_location: "build"
           app_build_command: "npm run build"
-          api_build_command: "npm run build --if-present"
-          # Explicitly set the function language to node
+          # Important: Explicitly set the right command to do nothing but indicate Node.js
+          api_build_command: "echo 'Using Node.js for Azure Functions'"
+          skip_api_build: false
           function_language: "node"
           function_language_version: "18"
           action: "upload"
           skip_deploy_on_missing_secrets: true
         env:
-          # Add the required Cosmos DB environment variables
+          # Environment variables for the build process
           COSMOS_ENDPOINT: ${{ secrets.COSMOS_ENDPOINT }}
           COSMOS_KEY: ${{ secrets.COSMOS_KEY }}
           COSMOS_DATABASE: "Timesheets"
           COSMOS_CONTAINER: "TimeAllocation"
+          # Add this environment variable to force Node.js detection
+          FUNCTIONS_WORKER_RUNTIME: "node"
+          NODE_VERSION: "18"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
