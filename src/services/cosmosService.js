@@ -87,6 +87,8 @@ export const getTimesheetById = async (id) => {
 
 // Save a timesheet
 export const saveTimesheet = async (timesheet) => {
+  console.log('🔍 saveTimesheet: Attempting to save timesheet to API...', timesheet);
+  
   try {
     const response = await fetch('/api/saveTimesheet', {
       method: 'POST',
@@ -96,16 +98,36 @@ export const saveTimesheet = async (timesheet) => {
       body: JSON.stringify(timesheet),
     });
     
+    console.log(`🔍 saveTimesheet: Response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      // Try to get detailed error information from the response
+      let errorDetail = '';
+      try {
+        const errorResponse = await response.json();
+        console.error('🔍 saveTimesheet: Detailed error from API:', errorResponse);
+        errorDetail = errorResponse.error || 
+                     errorResponse.details || 
+                     errorResponse.message || 
+                     '';
+        
+        // Throw error with details
+        throw new Error(`Server responded with ${response.status}: ${errorDetail}`);
+      } catch (jsonError) {
+        // If we can't parse the JSON, just use the status text
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('🔍 saveTimesheet: Successfully saved timesheet:', data);
+    return data;
   } catch (error) {
-    console.error("Error saving timesheet:", error);
+    console.error("❌ Error saving timesheet:", error);
     
     // In development, simulate a successful save
     if (isDevelopment()) {
+      console.log("🔍 saveTimesheet: Falling back to mock save in development mode");
       if (!timesheet.id) {
         return { ...timesheet, id: `mock-timesheet-${Date.now()}` };
       }
@@ -116,8 +138,30 @@ export const saveTimesheet = async (timesheet) => {
   }
 };
 
+// Test API connectivity
+export const pingApi = async () => {
+  console.log('🔍 pingApi: Testing API connectivity...');
+  
+  try {
+    const response = await fetch('/api/ping');
+    console.log(`🔍 pingApi: Response status: ${response.status} ${response.statusText}`);
+    
+    if (!response.ok) {
+      throw new Error(`API ping failed with status ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('🔍 pingApi: API responded successfully:', data);
+    return data;
+  } catch (error) {
+    console.error("❌ Error pinging API:", error);
+    return { error: error.message };
+  }
+};
+
 export default {
   getTimesheets,
   getTimesheetById,
-  saveTimesheet
+  saveTimesheet,
+  pingApi
 }; 
