@@ -32,21 +32,30 @@ const isDevelopment = () => {
 
 // Get all timesheets
 export const getTimesheets = async () => {
+  console.log('🔍 getTimesheets: Attempting to fetch timesheets from API...');
+  
   try {
     // Call the Azure Function API
+    console.log('🔍 getTimesheets: Calling API endpoint: /api/getTimesheets');
     const response = await fetch('/api/getTimesheets');
+    
+    console.log(`🔍 getTimesheets: Response status: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log(`🔍 getTimesheets: Successfully retrieved data. Items count: ${Array.isArray(data) ? data.length : 'not an array'}`);
+    console.log('🔍 getTimesheets: First item sample:', data.length > 0 ? JSON.stringify(data[0]).substring(0, 100) + '...' : 'No data');
+    
+    return data;
   } catch (error) {
-    console.error("Error fetching timesheets:", error);
+    console.error("❌ Error fetching timesheets:", error);
     
     // In development, fall back to mock data
     if (isDevelopment()) {
-      console.log("Falling back to mock data");
+      console.log("🔍 getTimesheets: Falling back to mock data in development mode");
       return mockData;
     }
     
