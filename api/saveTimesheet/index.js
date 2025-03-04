@@ -41,7 +41,15 @@ module.exports = async function (context, req) {
         return;
     }
     
-    const timesheet = req.body;
+    // Create a local copy of the timesheet to avoid modifying the original
+    const timesheet = { ...req.body };
+    
+    // Ensure the timesheet has an ID
+    if (!timesheet.id) {
+        timesheet.id = `timesheet-${Date.now()}`;
+        context.log(`🔍 API: No ID provided, generated: ${timesheet.id}`);
+    }
+    
     context.log(`🔍 API: Received timesheet data: ${JSON.stringify(timesheet)}`);
     
     try {
@@ -50,39 +58,85 @@ module.exports = async function (context, req) {
         const client = new CosmosClient({ endpoint, key });
         
         try {
+            // First, check read permissions with a simple read operation
+            context.log('🔍 API: Testing read permissions...');
+            try {
+                const { databases } = await client.databases.readAll().fetchAll();
+                context.log(`🔍 API: Read permissions verified. Found ${databases.length} databases.`);
+            } catch (readError) {
+                context.log.error(`❌ API: Read permission test failed: ${readError.message}`);
+                context.log.error(`❌ API: This suggests the credentials may not have read access.`);
+                throw new Error(`Read permission test failed: ${readError.message}`);
+            }
+            
             // Ensure database exists
             context.log(`🔍 API: Checking if database "${databaseId}" exists`);
-            const { database } = await client.databases.createIfNotExists({ id: databaseId });
-            context.log(`🔍 API: Database "${databaseId}" confirmed`);
+            let database;
+            try {
+                const dbResponse = await client.databases.createIfNotExists({ id: databaseId });
+                database = dbResponse.database;
+                context.log(`🔍 API: Database "${databaseId}" confirmed`);
+            } catch (dbError) {
+                context.log.error(`❌ API: Failed to create/confirm database: ${dbError.message}`);
+                context.log.error(`❌ API: This suggests the credentials may not have write access.`);
+                throw new Error(`Failed to create/confirm database: ${dbError.message}`);
+            }
             
             try {
                 // Ensure container exists
                 context.log(`🔍 API: Checking if container "${containerId}" exists`);
-                const { container } = await database.containers.createIfNotExists({ 
-                    id: containerId,
-                    partitionKey: { paths: ["/id"] }
-                });
-                context.log(`🔍 API: Container "${containerId}" confirmed`);
+                let container;
+                try {
+                    const containerResponse = await database.containers.createIfNotExists({ 
+                        id: containerId,
+                        partitionKey: { paths: ["/id"] }
+                    });
+                    container = containerResponse.container;
+                    context.log(`🔍 API: Container "${containerId}" confirmed with partition key "/id"`);
+                } catch (containerError) {
+                    context.log.error(`❌ API: Failed to create/confirm container: ${containerError.message}`);
+                    context.log.error(`❌ API: This suggests the credentials may not have container write access.`);
+                    throw new Error(`Failed to create/confirm container: ${containerError.message}`);
+                }
+                
+                // Test container read access first
+                context.log(`🔍 API: Testing container read access...`);
+                try {
+                    const { resources } = await container.items.readAll().fetchAll();
+                    context.log(`🔍 API: Container read access verified. Found ${resources.length} items.`);
+                } catch (containerReadError) {
+                    context.log.error(`❌ API: Container read test failed: ${containerReadError.message}`);
+                    throw new Error(`Container read test failed: ${containerReadError.message}`);
+                }
                 
                 let response;
                 
                 try {
-                    // If timesheet has an id, replace it, otherwise create a new one
-                    if (timesheet.id) {
-                        context.log(`🔍 API: Updating existing timesheet with ID: ${timesheet.id}`);
-                        response = await container.item(timesheet.id, timesheet.id).replace(timesheet);
-                        context.log(`🔍 API: Timesheet updated successfully`);
-                    } else {
-                        // Generate a new ID if one doesn't exist
-                        const newTimesheet = {
-                            ...timesheet,
-                            id: `timesheet-${Date.now()}`
+                    // Create a very simple test object to verify writing works
+                    if (timesheet._testPermissions === true) {
+                        const testObj = {
+                            id: `permission-test-${Date.now()}`,
+                            test: true
                         };
-                        context.log(`🔍 API: Creating new timesheet with generated ID: ${newTimesheet.id}`);
-                        response = await container.items.create(newTimesheet);
-                        timesheet.id = newTimesheet.id; // Update the id for the response
-                        context.log(`🔍 API: Timesheet created successfully`);
+                        context.log(`🔍 API: Testing write permissions with simple object: ${JSON.stringify(testObj)}`);
+                        response = await container.items.create(testObj);
+                        context.log(`🔍 API: Write permissions verified. Test object created successfully.`);
+                        
+                        // Return success for the permission test
+                        context.res = {
+                            status: 200,
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: { message: "Permission test successful", testId: testObj.id }
+                        };
+                        return;
                     }
+                    
+                    // Normal operation - create or replace the timesheet
+                    context.log(`🔍 API: Attempting to save timesheet with ID: ${timesheet.id}`);
+                    response = await container.items.upsert(timesheet);
+                    context.log(`🔍 API: Timesheet saved successfully with upsert operation`);
                     
                     context.res = {
                         status: 200,
@@ -98,7 +152,8 @@ module.exports = async function (context, req) {
                     context.log.error(`❌ API: Item operation error details: ${JSON.stringify({
                         code: itemError.code,
                         body: itemError.body || 'No body',
-                        statusCode: itemError.statusCode || 'No status'
+                        statusCode: itemError.statusCode || 'No status',
+                        headers: itemError.headers || 'No headers'
                     })}`);
                     throw itemError;
                 }
@@ -115,6 +170,7 @@ module.exports = async function (context, req) {
         context.log.error(`❌ API: Error details: ${JSON.stringify({
             code: error.code,
             name: error.name,
+            type: error.constructor.name,
             stack: error.stack && error.stack.split('\n').slice(0, 3).join('\n')
         })}`);
         
@@ -138,6 +194,8 @@ module.exports = async function (context, req) {
             errorMessage = "Too many requests. The database is throttling requests.";
         } else if (error.code === "BadRequest" || error.statusCode === 400) {
             errorMessage = "Bad request. There may be an issue with the timesheet data format.";
+        } else if (error.name === "TypeError" || error.message.includes("undefined") || error.message.includes("null")) {
+            errorMessage = "Type error. Possibly missing required fields in the data.";
         }
         
         context.res = {
@@ -148,7 +206,8 @@ module.exports = async function (context, req) {
             body: { 
                 error: errorMessage,
                 details: error.message,
-                code: error.code || error.statusCode
+                code: error.code || error.statusCode,
+                name: error.name
             }
         };
     }
