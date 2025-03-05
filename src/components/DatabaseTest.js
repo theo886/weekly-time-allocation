@@ -23,17 +23,17 @@ const DatabaseTest = () => {
       setLoading(true);
       setDebugInfo(prev => ({ ...prev, apiCalled: true, timestamp: new Date().toISOString() }));
       
-      console.log('🔍 DatabaseTest: Calling getTimesheets()...');
+      console.log('testing 🔍 DatabaseTest: Calling getTimesheets()...');
       const result = await getTimesheets();
       
-      console.log('🔍 DatabaseTest: Received result:', result);
+      console.log('testing 🔍 DatabaseTest: Received result:', result);
       setDebugInfo(prev => ({ ...prev, responseReceived: true }));
       
       if (result.error) {
         console.error('❌ DatabaseTest: Error in result:', result.error);
         setError(result.error);
       } else {
-        console.log(`🔍 DatabaseTest: Setting data, ${Array.isArray(result) ? result.length : 0} items`);
+        console.log(`testing 🔍 DatabaseTest: Setting data, ${Array.isArray(result) ? result.length : 0} items`);
         setData(result);
       }
     } catch (err) {
@@ -56,7 +56,7 @@ const DatabaseTest = () => {
         type: "timesheet"
       };
       
-      console.log('🔍 DatabaseTest: Creating simplified test record:', simpleTestTimesheet);
+      console.log('testing 🔍 DatabaseTest: Creating simplified test record:', simpleTestTimesheet);
       
       try {
         const result = await saveTimesheet(simpleTestTimesheet);
@@ -76,7 +76,7 @@ const DatabaseTest = () => {
             partitionKey: "alt-test-" + Date.now()
           };
           
-          console.log('🔍 DatabaseTest: Trying alternative format with explicit partition key:', alternativeTimesheet);
+          console.log('testing 🔍 DatabaseTest: Trying alternative format with explicit partition key:', alternativeTimesheet);
           const altResult = await saveTimesheet(alternativeTimesheet);
           
           if (altResult.error) {
@@ -86,7 +86,7 @@ const DatabaseTest = () => {
               message: `All attempts failed. Last error: ${altResult.error}` 
             });
           } else {
-            console.log('🔍 DatabaseTest: Alternative format succeeded:', altResult);
+            console.log('testing 🔍 DatabaseTest: Alternative format succeeded:', altResult);
             setSaveStatus({ 
               status: 'success', 
               message: 'Record created with alternative format!' 
@@ -94,7 +94,7 @@ const DatabaseTest = () => {
             await fetchData();
           }
         } else {
-          console.log('🔍 DatabaseTest: Simple test record created successfully:', result);
+          console.log('testing 🔍 DatabaseTest: Simple test record created successfully:', result);
           setSaveStatus({ status: 'success', message: 'Record created successfully!' });
           await fetchData();
         }
@@ -122,7 +122,7 @@ const DatabaseTest = () => {
         _testPermissions: true  // Special flag for API to test permissions
       };
       
-      console.log('🔍 DatabaseTest: Testing database write permissions');
+      console.log('testing 🔍 DatabaseTest: Testing database write permissions');
       const result = await saveTimesheet(permissionTest);
       
       if (result.error) {
@@ -132,7 +132,7 @@ const DatabaseTest = () => {
           message: `Permission test failed: ${result.error}` 
         });
       } else {
-        console.log('🔍 DatabaseTest: Permission test successful:', result);
+        console.log('testing 🔍 DatabaseTest: Permission test successful:', result);
         setSaveStatus({ 
           status: 'success', 
           message: 'Write permissions verified! The API can write to the database.' 
@@ -152,7 +152,7 @@ const DatabaseTest = () => {
     try {
       setSaveStatus({ status: 'saving', message: 'Testing API connectivity...' });
       
-      console.log('🔍 DatabaseTest: Testing basic API connectivity');
+      console.log('testing 🔍 DatabaseTest: Testing basic API connectivity');
       const result = await pingApi();
       
       if (result.error) {
@@ -163,7 +163,7 @@ const DatabaseTest = () => {
         });
         setPingResult(null);
       } else {
-        console.log('🔍 DatabaseTest: API ping successful:', result);
+        console.log('testing 🔍 DatabaseTest: API ping successful:', result);
         setSaveStatus({ 
           status: 'success', 
           message: 'API connectivity confirmed!' 

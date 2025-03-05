@@ -5,7 +5,7 @@ import { protectedResources } from '../auth/authConfig';
 const API_BASE_URL = protectedResources.timeSheetApi.endpoint;
 
 // Log the actual API base URL being used
-console.log('[TIMESHEET-DEBUG] API_BASE_URL resolved to:', API_BASE_URL);
+console.log('testing [TIMESHEET-DEBUG] API_BASE_URL resolved to:', API_BASE_URL);
 
 // Token cache to avoid excessive requests
 let tokenCache = null;
@@ -15,7 +15,7 @@ const getToken = async () => {
   try {
     // Check if we have a valid cached token
     if (tokenCache && tokenCache.expiresAt > Date.now()) {
-      console.log("Using cached token");
+      console.log("testing Using cached token");
       return tokenCache.token;
     }
 
@@ -84,11 +84,11 @@ export async function getTimesheets(userInfo) {
         const parsedData = JSON.parse(cachedData);
         // If we have cache that indicates empty data, use it
         if (parsedData && parsedData.isEmpty === true) {
-          console.log('[TIMESHEET-DEBUG] Using cached empty data for user:', userInfo.userId);
+          console.log('testing [TIMESHEET-DEBUG] Using cached empty data for user:', userInfo.userId);
           return [];
         }
         // Otherwise, for non-empty data, we'll refetch to ensure freshness
-        console.log('[TIMESHEET-DEBUG] Found cached data but refetching for freshness');
+        console.log('testing [TIMESHEET-DEBUG] Found cached data but refetching for freshness');
       } catch (e) {
         console.warn('[TIMESHEET-DEBUG] Error parsing cached data:', e);
         // Clear invalid cache
@@ -97,10 +97,10 @@ export async function getTimesheets(userInfo) {
     }
     
     const headers = await getAuthHeaders();
-    console.log('[TIMESHEET-DEBUG] Auth headers obtained:', headers.Authorization ? 'Authorization header present' : 'No Authorization header');
+    console.log('testing [TIMESHEET-DEBUG] Auth headers obtained:', headers.Authorization ? 'Authorization header present' : 'No Authorization header');
     
     // Add detailed logging about the user info
-    console.log('[TIMESHEET-DEBUG] Fetching timesheets with user info:', JSON.stringify(userInfo, null, 2));
+    console.log('testing [TIMESHEET-DEBUG] Fetching timesheets with user info:', JSON.stringify(userInfo, null, 2));
     
     // Create an AbortController with a timeout
     const controller = new AbortController();
@@ -108,7 +108,7 @@ export async function getTimesheets(userInfo) {
     
     // Log the API URL being called
     const apiUrl = `/api/timesheets?userId=${userInfo.userId}`;
-    console.log('[TIMESHEET-DEBUG] Calling API URL:', apiUrl);
+    console.log('testing [TIMESHEET-DEBUG] Calling API URL:', apiUrl);
     
     try {
       const response = await fetch(apiUrl, {
@@ -118,7 +118,7 @@ export async function getTimesheets(userInfo) {
       });
       
       clearTimeout(timeoutId);
-      console.log('[TIMESHEET-DEBUG] API response status:', response.status, response.statusText);
+      console.log('testing [TIMESHEET-DEBUG] API response status:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -127,7 +127,7 @@ export async function getTimesheets(userInfo) {
       }
       
       const data = await response.json();
-      console.log('[TIMESHEET-DEBUG] Raw API response:', JSON.stringify(data));
+      console.log('testing [TIMESHEET-DEBUG] Raw API response:', JSON.stringify(data));
       
       // Make sure we have a valid response structure
       if (!data || !data.timesheets) {
@@ -138,7 +138,7 @@ export async function getTimesheets(userInfo) {
       // Cache the result - if it's empty, specially mark it
       if (data.timesheets && data.timesheets.length === 0) {
         sessionStorage.setItem(cacheKey, JSON.stringify({ isEmpty: true, timestamp: Date.now() }));
-        console.log('[TIMESHEET-DEBUG] Cached empty results for user:', userInfo.userId);
+        console.log('testing [TIMESHEET-DEBUG] Cached empty results for user:', userInfo.userId);
       } else {
         // For non-empty data, we'll store it but won't rely on this cache for future fetches
         sessionStorage.setItem(cacheKey, JSON.stringify({ 
@@ -146,10 +146,10 @@ export async function getTimesheets(userInfo) {
           timestamp: Date.now(),
           count: data.timesheets.length
         }));
-        console.log('[TIMESHEET-DEBUG] Cached metadata for', data.timesheets.length, 'timesheets');
+        console.log('testing [TIMESHEET-DEBUG] Cached metadata for', data.timesheets.length, 'timesheets');
       }
       
-      console.log('[TIMESHEET-DEBUG] Returning timesheets:', JSON.stringify(data.timesheets));
+      console.log('testing [TIMESHEET-DEBUG] Returning timesheets:', JSON.stringify(data.timesheets));
       return data.timesheets || [];
     } catch (fetchError) {
       if (fetchError.name === 'AbortError') {
@@ -174,7 +174,7 @@ export async function saveTimesheet(timesheet, userInfo) {
     if (userInfo && userInfo.userId) {
       const cacheKey = `timesheets_${userInfo.userId}`;
       sessionStorage.removeItem(cacheKey);
-      console.log('[TIMESHEET-DEBUG] Cleared cache for user before saving:', userInfo.userId);
+      console.log('testing [TIMESHEET-DEBUG] Cleared cache for user before saving:', userInfo.userId);
     }
     
     const headers = await getAuthHeaders();

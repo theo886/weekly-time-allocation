@@ -32,22 +32,22 @@ const isDevelopment = () => {
 
 // Get all timesheets
 export const getTimesheets = async () => {
-  console.log('🔍 getTimesheets: Attempting to fetch timesheets from API...');
+  console.log('testing 🔍 getTimesheets: Attempting to fetch timesheets from API...');
   
   try {
     // Call the Azure Function API
-    console.log('🔍 getTimesheets: Calling API endpoint: /api/getTimesheets');
+    console.log('testing 🔍 getTimesheets: Calling API endpoint: /api/getTimesheets');
     const response = await fetch('/api/getTimesheets');
     
-    console.log(`🔍 getTimesheets: Response status: ${response.status} ${response.statusText}`);
+    console.log(`testing 🔍 getTimesheets: Response status: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log(`🔍 getTimesheets: Successfully retrieved data. Items count: ${Array.isArray(data) ? data.length : 'not an array'}`);
-    console.log('🔍 getTimesheets: First item sample:', data.length > 0 ? JSON.stringify(data[0]).substring(0, 100) + '...' : 'No data');
+    console.log(`testing 🔍 getTimesheets: Successfully retrieved data. Items count: ${Array.isArray(data) ? data.length : 'not an array'}`);
+    console.log('testing 🔍 getTimesheets: First item sample:', data.length > 0 ? JSON.stringify(data[0]).substring(0, 100) + '...' : 'No data');
     
     return data;
   } catch (error) {
@@ -55,7 +55,7 @@ export const getTimesheets = async () => {
     
     // In development, fall back to mock data
     if (isDevelopment()) {
-      console.log("🔍 getTimesheets: Falling back to mock data in development mode");
+      console.log("testing 🔍 getTimesheets: Falling back to mock data in development mode");
       return mockData;
     }
     
@@ -87,7 +87,7 @@ export const getTimesheetById = async (id) => {
 
 // Save a timesheet
 export const saveTimesheet = async (timesheet) => {
-  console.log('🔍 saveTimesheet: Attempting to save timesheet to API...', timesheet);
+  console.log('testing 🔍 saveTimesheet: Attempting to save timesheet to API...', timesheet);
   
   try {
     const response = await fetch('/api/saveTimesheet', {
@@ -98,7 +98,7 @@ export const saveTimesheet = async (timesheet) => {
       body: JSON.stringify(timesheet),
     });
     
-    console.log(`🔍 saveTimesheet: Response status: ${response.status} ${response.statusText}`);
+    console.log(`testing 🔍 saveTimesheet: Response status: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
       // Try to get detailed error information from the response
@@ -120,14 +120,14 @@ export const saveTimesheet = async (timesheet) => {
     }
     
     const data = await response.json();
-    console.log('🔍 saveTimesheet: Successfully saved timesheet:', data);
+    console.log('testing 🔍 saveTimesheet: Successfully saved timesheet:', data);
     return data;
   } catch (error) {
     console.error("❌ Error saving timesheet:", error);
     
     // In development, simulate a successful save
     if (isDevelopment()) {
-      console.log("🔍 saveTimesheet: Falling back to mock save in development mode");
+      console.log("testing 🔍 saveTimesheet: Falling back to mock save in development mode");
       if (!timesheet.id) {
         return { ...timesheet, id: `mock-timesheet-${Date.now()}` };
       }
@@ -140,18 +140,18 @@ export const saveTimesheet = async (timesheet) => {
 
 // Test API connectivity
 export const pingApi = async () => {
-  console.log('🔍 pingApi: Testing API connectivity...');
+  console.log('testing 🔍 pingApi: Testing API connectivity...');
   
   try {
     const response = await fetch('/api/ping');
-    console.log(`🔍 pingApi: Response status: ${response.status} ${response.statusText}`);
+    console.log(`testing 🔍 pingApi: Response status: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
       throw new Error(`API ping failed with status ${response.status}: ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log('🔍 pingApi: API responded successfully:', data);
+    console.log('testing 🔍 pingApi: API responded successfully:', data);
     return data;
   } catch (error) {
     console.error("❌ Error pinging API:", error);
