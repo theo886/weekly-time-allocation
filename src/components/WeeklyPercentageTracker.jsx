@@ -600,17 +600,43 @@ const WeeklyPercentageTracker = () => {
         </CardHeader>
         
         <CardContent>
-          <div className="flex flex-col sm:flex-row items-center justify-center mb-3">
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsPinned(!isPinned)} 
-              className={`mr-2 ${isPinned ? 'text-amber-600' : 'text-slate-400'}`}
-            >
-              <PinIcon isPinned={isPinned} />
-            </Button>
-            <span className="text-lg font-semibold text-slate-800 text-center sm:text-left">
-              Week of {formatWeekRange(currentWeek)}
-            </span>
+          <div className="flex flex-col items-center justify-center mb-3">
+            <div className="flex items-center mb-2">
+              <Button 
+                variant="ghost" 
+                onClick={() => setIsPinned(!isPinned)} 
+                className={`mr-2 ${isPinned ? 'text-amber-600' : 'text-slate-400'}`}
+              >
+                <PinIcon isPinned={isPinned} />
+              </Button>
+              <span className="text-lg font-semibold text-slate-800 text-center">
+                Week of {formatWeekRange(currentWeek)}
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-center mt-2 mb-2">
+              <Button 
+                variant="ghost" 
+                className="text-slate-600 flex items-center mr-4" 
+                onClick={resetAndGoToPreviousWeek}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+                <span>Prev</span>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                className="text-slate-600 flex items-center" 
+                onClick={resetAndGoToNextWeek}
+              >
+                <span>Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </Button>
+            </div>
           </div>
           
           {/* Success message */}
@@ -741,35 +767,13 @@ const WeeklyPercentageTracker = () => {
             </div>
           </div>
           
-          <div className="mt-6 pt-4 border-t flex flex-col sm:flex-row justify-between items-center">
-            <Button 
-              variant="ghost" 
-              className="text-slate-600 flex items-center mb-3 sm:mb-0" 
-              onClick={resetAndGoToPreviousWeek}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
-              <span>Prev</span>
-            </Button>
-            
-            <div className="flex items-center font-medium mb-3 sm:mb-0">
+          <div className="mt-6 pt-4 border-t flex justify-center items-center">
+            <div className="flex items-center font-medium">
               <span className="mr-2">Total:</span>
               <span className={totalError ? "text-red-600" : "text-green-600"}>
                 {totalPercentage}%
               </span>
             </div>
-            
-            <Button 
-              variant="ghost" 
-              className="text-slate-600 flex items-center" 
-              onClick={resetAndGoToNextWeek}
-            >
-              <span>Next</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-            </Button>
           </div>
         </CardContent>
         

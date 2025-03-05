@@ -6,7 +6,7 @@ const DebugInfo = () => {
   const currentUser = useCurrentUser();
   const userInfo = getUserInfo(currentUser);
   
-  // Only show in development
+  // Only show in development 
   if (process.env.NODE_ENV !== 'development') {
     return null;
   }
