@@ -6,7 +6,7 @@ This file contains important credentials and configuration details saved before 
 - AZURE_SUBSCRIPTION_ID=903698d9-fdb2-4101-bf43-4c2b63cddce5
 - AZURE_TENANT_ID=43e5dc39-9e1f-4979-b674-674ace58ff9a
 
-## CosmosDB Configuration
+## CosmosDB  Configuration
 The project uses Azure CosmosDB with the following configuration:
 
 ### Required Environment Variables
