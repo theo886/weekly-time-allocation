@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Calendar, Plus, X, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, Plus, X, AlertCircle, Loader2, Settings } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,6 +7,8 @@ import { Select } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { saveTimesheet, getTimesheets } from '../services/timesheetService';
 import { useCurrentUser, getUserInfo } from '../auth/AuthProvider';
+import DatabaseTest from './DatabaseTest';
+import DiagnosticsView from './DiagnosticsView';
 
 // Add PinIcon component
 const PinIcon = ({ isPinned }) => {
@@ -573,6 +575,13 @@ const WeeklyPercentageTracker = () => {
     }
   };
 
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+
+  // Function to toggle diagnostics display
+  const toggleDiagnostics = () => {
+    setShowDiagnostics(!showDiagnostics);
+  };
+
   // Render loading state
   if (isLoading) {
     return (
@@ -590,16 +599,45 @@ const WeeklyPercentageTracker = () => {
   return (
     <div className="max-w-2xl mx-auto p-4">
       <Card>
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-          <div className="flex flex-col sm:flex-row justify-between items-center">
-            <CardTitle className="flex items-center text-indigo-800 mb-2 sm:mb-0">
-              <Calendar className="h-5 w-5 mr-2 text-indigo-600" />
-              Weekly Time Allocation
-            </CardTitle>
+        <CardHeader className="bg-blue-50 py-4 px-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="flex items-center text-indigo-700 text-2xl">
+                <Calendar className="h-7 w-7 mr-2 text-indigo-600" />
+                Weekly Time Allocation
+              </CardTitle>
+            </div>
+            <div className="flex items-center">
+              <div className="text-lg font-medium text-indigo-600 mr-3">John Doe</div>
+              <button 
+                onClick={toggleDiagnostics} 
+                className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                title="System Diagnostics"
+              >
+                <Settings size={20} />
+              </button>
+            </div>
           </div>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="py-8 px-6">
+          {showDiagnostics && (
+            <div className="mb-8 p-4 border rounded-lg bg-gray-50">
+              <h2 className="text-xl font-bold mb-4">System Diagnostics</h2>
+              <div className="grid grid-cols-1 gap-6">
+                <DatabaseTest />
+                <DiagnosticsView />
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button 
+                  onClick={toggleDiagnostics}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800"
+                >
+                  Close Diagnostics
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col items-center justify-center mb-3">
             <div className="flex items-center mb-2">
               <Button 

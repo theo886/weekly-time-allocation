@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, X, AlertCircle } from 'lucide-react';
+import { Calendar, Plus, X, AlertCircle, Settings } from 'lucide-react';
+import DatabaseTest from './DatabaseTest';
+import DiagnosticsView from './DiagnosticsView';
 
 const WeeklyPercentageTracker = () => {
   // Sample projects data
@@ -60,6 +62,8 @@ const WeeklyPercentageTracker = () => {
   
   // State to track if submitted data has been modified
   const [isModified, setIsModified] = useState(false);
+
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   // Format date range for the week
   const formatWeekRange = (startDate) => {
@@ -486,6 +490,11 @@ const WeeklyPercentageTracker = () => {
     setIsModified(false);
   }, [currentWeek]);
 
+  // Function to toggle diagnostics display
+  const toggleDiagnostics = () => {
+    setShowDiagnostics(!showDiagnostics);
+  };
+
   // Our Card, Select and other UI components
   const Card = ({ children, className }) => (
     <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${className || ''}`}>
@@ -616,12 +625,36 @@ const WeeklyPercentageTracker = () => {
               </CardTitle>
             </div>
             <div className="flex items-center">
-              <div className="text-lg font-medium text-indigo-600">John Doe</div>
+              <div className="text-lg font-medium text-indigo-600 mr-3">John Doe</div>
+              <button 
+                onClick={toggleDiagnostics} 
+                className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                title="System Diagnostics"
+              >
+                <Settings size={20} />
+              </button>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="py-8 px-6">
+          {showDiagnostics && (
+            <div className="mb-8 p-4 border rounded-lg bg-gray-50">
+              <h2 className="text-xl font-bold mb-4">System Diagnostics</h2>
+              <div className="grid grid-cols-1 gap-6">
+                <DatabaseTest />
+                <DiagnosticsView />
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button 
+                  onClick={toggleDiagnostics}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800"
+                >
+                  Close Diagnostics
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-8">
             <Button 
               variant="ghost" 
