@@ -1,39 +1,45 @@
 {
-  "name": "weekly-time-allocation",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@azure/cosmos": "^4.2.0",
-    "autoprefixer": "^10.4.16",
-    "lucide-react": "^0.300.0",
-    "postcss": "^8.4.31",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "tailwindcss": "^3.3.3"
-  },
+  "name": "weekly-percentage-tracker",
+  "version": "1.0.0",
+  "description": "A web application to track weekly time allocation across different projects",
+  "main": "server.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "node server.js",
+    "build": "echo 'Building project...' && exit 0",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "keywords": [
+    "timesheet",
+    "tracker",
+    "percentage",
+    "weekly"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theo886/EngTimesheets.git"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/theo886/EngTimesheets/issues"
+  },
+  "homepage": "https://github.com/theo886/EngTimesheets#readme",
+  "dependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.12"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^3.2.5",
+    "@storybook/addon-essentials": "^8.6.4",
+    "@storybook/addon-interactions": "^8.6.4",
+    "@storybook/blocks": "^8.6.4",
+    "@storybook/html": "^8.6.4",
+    "@storybook/html-vite": "^8.6.4",
+    "@storybook/test": "^8.6.4",
+    "storybook": "^8.6.4"
   }
 }

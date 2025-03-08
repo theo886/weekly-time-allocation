@@ -1,8 +1,0 @@
-*.js.map
-*.ts
-.git*
-.vscode
-__pycache__
-local.settings.json
-test
-node_modules 
