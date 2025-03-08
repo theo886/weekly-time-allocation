@@ -13,26 +13,26 @@ const projectDataPath = path.join(__dirname, 'projectData.js');
 
 // Define a color palette for projects
 const colorPalette = [
-    "#2E7AB8", // Strong Blue - easily distinguishable
-    "#D55E00", // Vermillion - high contrast orange
-    "#009E73", // Green - optimized for deuteranopia
-    "#CC79A7", // Reddish Purple - distinct from blue
-    "#F0E442", // Yellow - high luminance
-    "#0072B2", // Dark Blue - good contrast
-    "#E69F00", // Orange - distinct from red
-    "#56B4E9", // Sky Blue - high visibility
-    "#8B2E2E", // Dark Red - good contrast
-    "#44AA99", // Teal - distinct from blue/green
-    "#882255", // Purple - high contrast
-    "#117733", // Forest Green - distinct from teal
-    "#DDCC77", // Sand - light but visible
-    "#CC6677", // Rose - distinct from red
-    "#AA4499", // Magenta - high contrast
-    "#4477AA", // Steel Blue - professional
-    "#999933", // Olive - natural tone
-    "#661100", // Dark Brown - high contrast
-    "#88CCEE", // Light Blue - soft but visible
-    "#332288"  // Royal Purple - deep contrast
+    "#3498DB", // Bright Blue
+    "#E74C3C", // Bright Red
+    "#2ECC71", // Emerald Green
+    "#9B59B6", // Amethyst Purple
+    "#F1C40F", // Sunflower Yellow
+    "#1ABC9C", // Turquoise
+    "#E67E22", // Carrot Orange
+    "#34495E", // Wet Asphalt (Dark Blue-Gray)
+    "#D35400", // Pumpkin (Dark Orange)
+    "#16A085", // Green Sea (Teal)
+    "#8E44AD", // Wisteria (Deep Purple)
+    "#27AE60", // Nephritis (Deep Green)
+    "#F39C12", // Orange
+    "#2980B9", // Belize Hole (Deep Blue)
+    "#C0392B", // Pomegranate (Deep Red)
+    "#7F8C8D", // Asbestos (Gray)
+    "#D2B4DE", // Light Purple
+    "#A3E4D7", // Light Teal
+    "#F9E79F", // Light Yellow
+    "#F5B7B1"  // Light Red
 ];
 
 // List of projects to be maintained

@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const debugMode = true; // Set to false to disable fake data loading
   
   // Access projects and loadFakeDataForTesting from global scope
-  const projects = window.projects;
+  const projects = window.projectData.projects;
   const loadFakeDataForTesting = window.loadFakeDataForTesting;
   
   // Access utility functions from global scope
@@ -375,10 +375,19 @@ document.addEventListener('DOMContentLoaded', function() {
       
       const selectTrigger = document.createElement('div');
       selectTrigger.className = `flex items-center justify-between px-3 py-2 border rounded-md cursor-pointer ${isDuplicateProject(entry.projectId) ? 'border-red-500' : ''}`;
+      
+      // Find the selected project to display its color
+      const selectedProject = entry.projectId ? projects.find(p => p.id.toString() === entry.projectId) : null;
+      
       selectTrigger.innerHTML = `
-        <span class="text-gray-500 truncate mr-2">
-          ${entry.projectId ? projects.find(p => p.id.toString() === entry.projectId)?.name || 'Select Project' : 'Select Project'}
-        </span>
+        <div class="flex items-center space-x-2 overflow-hidden">
+          ${selectedProject ? 
+            `<span class="inline-block w-4 h-4 rounded-full flex-shrink-0" style="background-color: ${selectedProject.color || '#808080'}"></span>` : 
+            ''}
+          <span class="text-gray-500 truncate">
+            ${selectedProject?.name || 'Select Project'}
+          </span>
+        </div>
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
           <path d="M4.5 6.5L7.5 9.5L10.5 6.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -416,8 +425,11 @@ document.addEventListener('DOMContentLoaded', function() {
       
       projects.forEach(project => {
         const option = document.createElement('div');
-        option.className = 'px-3 py-2 hover:bg-slate-100 cursor-pointer overflow-hidden text-ellipsis';
-        option.textContent = `${project.name} (${project.code})`;
+        option.className = 'px-3 py-2 hover:bg-slate-100 cursor-pointer overflow-hidden text-ellipsis flex items-center space-x-2';
+        option.innerHTML = `
+          <span class="inline-block w-4 h-4 rounded-full flex-shrink-0" style="background-color: ${project.color || '#808080'}"></span>
+          <span class="truncate">${project.name} (${project.code})</span>
+        `;
         option.addEventListener('click', function(event) {
           updateEntry(entry.id, 'projectId', project.id.toString());
           dropdown.classList.add('hidden');
@@ -1124,9 +1136,9 @@ document.addEventListener('DOMContentLoaded', function() {
           // Find or create dataset for this project
           let dataset = timeData.datasets.find(ds => ds.label === projectName);
           if (!dataset) {
-            // Generate a color based on project ID to ensure consistency
-            const hue = (parseInt(entry.projectId) * 137) % 360;
-            const color = `hsl(${hue}, 70%, 60%)`;
+            // Use project color from the projects array for consistency
+            const projectObj = projects.find(p => p.id.toString() === entry.projectId);
+            const color = projectObj?.color || `hsl(${(parseInt(entry.projectId) * 137) % 360}, 70%, 60%)`;
             
             dataset = {
               label: projectName,
@@ -1184,21 +1196,28 @@ document.addEventListener('DOMContentLoaded', function() {
           projectTotals[projectName] += percentage;
           weekTotals[projectName] += percentage;
           
-          // Generate color based on project ID
-          const hue = (parseInt(entry.projectId) * 137) % 360;
-          const color = `hsl(${hue}, 70%, 60%)`;
+          // Find or create dataset for this project
+          let dataset = timeData.datasets.find(ds => ds.label === projectName);
+          if (!dataset) {
+            // Use project color from the projects array for consistency
+            const projectObj = projects.find(p => p.id.toString() === entry.projectId);
+            const color = projectObj?.color || `hsl(${(parseInt(entry.projectId) * 137) % 360}, 70%, 60%)`;
+            
+            dataset = {
+              label: projectName,
+              data: Array(timeData.labels.length - 1).fill(0), // Fill with zeros for previous weeks
+              backgroundColor: color,
+              borderColor: color,
+              borderWidth: 2,
+              tension: 0.3,
+              // Store first appearance info for sorting
+              firstAppearance: projectFirstAppearance[projectName] || 0
+            };
+            timeData.datasets.push(dataset);
+          }
           
-          // Create dataset for this project
-          timeData.datasets.push({
-            label: projectName,
-            data: [percentage],
-            backgroundColor: color,
-            borderColor: color,
-            borderWidth: 2,
-            tension: 0.3,
-            // Store index to maintain original project order
-            orderIndex: index
-          });
+          // Add this week's percentage
+          dataset.data.push(percentage);
         });
         
         // Create array of weeks in chronological order
@@ -1308,11 +1327,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Generate colors for the pie chart
-    pieChartData.datasets[0].backgroundColor = pieChartData.labels.map((project, index) => {
-      // Find the matching project ID for consistent coloring
-      const projectObj = projects.find(p => p.name === project);
-      const hue = projectObj ? (parseInt(projectObj.id) * 137) % 360 : (index * 137) % 360;
-      return `hsl(${hue}, 70%, 60%)`;
+    pieChartData.datasets[0].backgroundColor = pieChartData.labels.map((projectName, index) => {
+      // Find the project object to use its color
+      const projectObj = projects.find(p => p.name === projectName);
+      return projectObj?.color || `hsl(${(index * 137) % 360}, 70%, 60%)`;
     });
     
     return { 

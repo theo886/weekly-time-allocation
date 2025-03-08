@@ -1,25 +1,22 @@
-// Sample projects data
-const projects = [
-  { id: 1, name: "Website Redesign", code: "WEB-001" },
-  { id: 2, name: "Mobile App Development", code: "APP-002" },
-  { id: 3, name: "Internal Dashboard", code: "DASH-003" },
-  { id: 4, name: "Client Onboarding System", code: "CL-004" },
-  { id: 5, name: "Infrastructure Upgrade", code: "INF-005" },
-  { id: 6, name: "Data Migration", code: "DM-006" },
-  { id: 7, name: "Security Audit", code: "SEC-007" },
-  { id: 8, name: "Training & Documentation", code: "TD-008" }
-];
+// Sample data for testing purposes only
+// This file should not be used for production data
 
 // Function to generate and load fake data for testing
 function loadFakeDataForTesting(currentWeek, formatWeekRange) {
-  const fakeProjectIds = ["1", "2", "3", "4", "5"];
-  const projectNames = {
-    "1": "Website Redesign",
-    "2": "Mobile App Development",
-    "3": "Internal Dashboard",
-    "4": "Client Onboarding System",
-    "5": "Infrastructure Upgrade"
-  };
+  // Reference the projects from the projectData module
+  const projects = window.projectData.projects;
+  
+  // Selected project IDs to include in test data
+  const fakeProjectIds = ["CP000022", "MS000002", "RD000026", "RD000047", "VO000009", "VO000013", "WD000007"];
+  
+  // Map of project names for quick reference
+  const projectNames = {};
+  fakeProjectIds.forEach(id => {
+    const project = window.projectData.getProjectById(id);
+    if (project) {
+      projectNames[id] = project.name;
+    }
+  });
   
   // Generate dates for 5 consecutive weeks starting from 5 weeks ago
   const startDate = new Date(currentWeek);
@@ -34,20 +31,26 @@ function loadFakeDataForTesting(currentWeek, formatWeekRange) {
   
   // Story arcs for each project over 5 weeks
   const projectStories = {
-    // Website Redesign: starts high, gradually decreases
-    "1": [35, 30, 25, 20, 15],
+    // General R&D Infrastructure: starts high, gradually decreases
+    "CP000022": [35, 30, 25, 20, 15],
     
-    // Mobile App: starts low, increases, then plateaus
-    "2": [15, 25, 35, 35, 30],
+    // NPI ST PX Series: starts low, increases, then plateaus 
+    "MS000002": [15, 25, 35, 35, 30],
     
-    // Internal Dashboard: steady in the middle
-    "3": [20, 20, 15, 20, 20],
+    // Sales Orders: steady in the middle
+    "RD000026": [20, 20, 15, 20, 20],
     
-    // Client Onboarding: not present initially, increases later
-    "4": [0, 5, 10, 15, 20],
+    // PX Pump Train II: not present initially, increases later
+    "RD000047": [0, 5, 10, 15, 20],
     
-    // Infrastructure: starts high, decreases, then disappears
-    "5": [30, 20, 15, 10, 0]
+    // PX, Turbo, Pump, Support: starts high, decreases, then disappears
+    "VO000009": [30, 20, 15, 10, 0],
+    
+    // PX Q500 Development: appears in later weeks
+    "VO000013": [0, 0, 0, 0, 15],
+    
+    // PX Q400 COGS Reduction: small consistent allocation
+    "WD000007": [0, 0, 0, 0, 0]
   };
   
   const previousSubmissions = {};
@@ -89,6 +92,5 @@ function loadFakeDataForTesting(currentWeek, formatWeekRange) {
   return previousSubmissions;
 }
 
-// Expose variables and functions globally
-window.projects = projects;
+// Expose function globally
 window.loadFakeDataForTesting = loadFakeDataForTesting; 
