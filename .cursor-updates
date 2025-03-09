@@ -13,4 +13,5 @@
   - Added date range selector for charts
   - Improved chart display with cleaner labels showing only week start date
   - Added margin to delete button for better spacing
-  - Removed redundant chart titles for cleaner interface 
+  - Removed redundant chart titles for cleaner interface
+- Implement user-specific local caching for time entries with Cosmos DB integration, caching and API Service framework for persistent data storage

@@ -9,7 +9,14 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Access utility functions from global scope
   const { validateEntries, calculateTotal, redistributePercentages, formatWeekRange } = window.utilsFunctions;
+  
+  // Access cache manager and API service
+  const { setEntriesForUser, getEntriesForUser, getAllKeysForUser } = window.cacheManager;
+  const { fetchAllTimeEntriesForUser, saveTimeEntriesToApi } = window.apiService;
 
+  // Current user ID (will be replaced with authentication later)
+  const currentUserId = "defaultUser";
+  
   // State variables
   let currentWeek = setInitialWeek();
   let entries = [
@@ -19,14 +26,110 @@ document.addEventListener('DOMContentLoaded', function() {
   let isAnyDropdownOpen = false;
   let isPinned = false;
   let error = "";
-  let previousSubmissions = {};
   let isSubmitted = false;
   let isModified = false;
   let entryInputModes = {}; // Will store entry.id -> 'percent' or 'hours'
+  let isLoading = true; // Track loading state
   
-  // Load fake data for testing if in debug mode
-  if (debugMode) {
-    previousSubmissions = loadFakeDataForTesting(currentWeek, formatWeekRange);
+  // Function to load all user data on initial app load
+  async function loadAllUserData() {
+    try {
+      const allEntries = await fetchAllTimeEntriesForUser(currentUserId);
+      if (allEntries && allEntries.length > 0) {
+        allEntries.forEach(entry => {
+          setEntriesForUser(currentUserId, entry.weekKey, entry.entries);
+        });
+        console.log(`Loaded ${allEntries.length} timesheet entries for user`);
+      } else if (debugMode) {
+        // If no entries loaded from database but in debug mode, generate fake data
+        await populateDebugData();
+      }
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+      if (debugMode) {
+        await populateDebugData();
+      }
+    } finally {
+      isLoading = false;
+      // Check if we have data for the current week
+      const weekKey = formatWeekRange(currentWeek);
+      const existingEntries = getEntriesForUser(currentUserId, weekKey);
+      if (existingEntries) {
+        entries = JSON.parse(JSON.stringify(existingEntries));
+        isSubmitted = true;
+      }
+      render(); // Update UI after data is loaded
+    }
+  }
+
+  // Function to pre-populate 5 weeks of sample data for the default user
+  async function populateDebugData() {
+    console.log("Generating debug data for 5 weeks...");
+    const today = new Date();
+    
+    // Generate 5 weeks of sample data for defaultUser
+    for (let i = 0; i < 5; i++) {
+      const weekStart = new Date(today);
+      weekStart.setDate(weekStart.getDate() - (7 * i)); // Go back i weeks
+      weekStart.setHours(0, 0, 0, 0);
+      
+      // Monday of the week
+      const monday = new Date(weekStart);
+      monday.setDate(monday.getDate() - monday.getDay() + 1);
+      
+      const weekKey = formatWeekRange(monday);
+      
+      // Create 3-5 random entries
+      const numEntries = Math.floor(Math.random() * 3) + 3; // 3-5 entries
+      const sampleEntries = [];
+      
+      // Get a subset of projects
+      const selectedProjects = [];
+      for (let j = 0; j < numEntries; j++) {
+        // Get a random project that's not already selected
+        let randomProject;
+        do {
+          randomProject = projects[Math.floor(Math.random() * projects.length)];
+        } while (selectedProjects.includes(randomProject.id.toString()));
+        
+        selectedProjects.push(randomProject.id.toString());
+      }
+      
+      // Initialize with equal percentages
+      let basePercentage = Math.floor(100 / numEntries);
+      let remainder = 100 - (basePercentage * numEntries);
+      
+      // Create entries
+      selectedProjects.forEach((projectId, index) => {
+        const percentage = index === 0 ? basePercentage + remainder : basePercentage;
+        
+        sampleEntries.push({
+          id: Date.now() + Math.random(),
+          projectId: projectId,
+          percentage: percentage.toString(),
+          isManuallySet: false
+        });
+      });
+      
+      // Save to API
+      try {
+        const apiEntries = sampleEntries.map(entry => ({
+          projectId: entry.projectId,
+          projectName: projects.find(p => p.id.toString() === entry.projectId)?.name,
+          percentage: entry.percentage
+        }));
+        
+        await saveTimeEntriesToApi(currentUserId, weekKey, apiEntries);
+        console.log(`Created sample entries for week ${weekKey}`);
+        
+        // Also add to local cache
+        setEntriesForUser(currentUserId, weekKey, sampleEntries);
+      } catch (error) {
+        console.error(`Failed to create sample entries for week ${weekKey}:`, error);
+      }
+    }
+    
+    console.log("Debug data generation complete");
   }
 
   // DOM elements
@@ -35,6 +138,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initialize event listeners
   initializeEventListeners();
+  
+  // Load all user data after initialization
+  loadAllUserData();
   
   // Render the initial state
   render();
@@ -596,17 +702,17 @@ document.addEventListener('DOMContentLoaded', function() {
       isSubmitted = false;
       isModified = false;
     } else {
-      // Check if we have stored entries for the previous week
+      // Check if we have stored entries for the previous week in the cache
       const prevWeekKey = formatWeekRange(prevWeek);
-      const previousWeekEntries = previousSubmissions[prevWeekKey];
+      const existingEntries = getEntriesForUser(currentUserId, prevWeekKey);
       
       // Check if the previous week was submitted
-      isSubmitted = !!previousWeekEntries;
+      isSubmitted = !!existingEntries;
       isModified = false;
       
       // If we have previous entries for this week, use them
-      if (previousWeekEntries && previousWeekEntries.length > 0) {
-        entries = previousWeekEntries.map(entry => {
+      if (existingEntries && existingEntries.length > 0) {
+        entries = existingEntries.map(entry => {
           const newId = Date.now() + Math.random(); // Generate new IDs
           entryInputModes[newId] = 'percent'; // Set default input mode
           return {
@@ -648,17 +754,17 @@ document.addEventListener('DOMContentLoaded', function() {
       isSubmitted = false;
       isModified = false;
     } else {
-      // Get the next week's entries if they exist
+      // Get the next week's entries from the cache if they exist
       const nextWeekKey = formatWeekRange(nextWeek);
-      const previousWeekEntries = previousSubmissions[nextWeekKey];
+      const existingEntries = getEntriesForUser(currentUserId, nextWeekKey);
       
       // Check if the next week was submitted
-      isSubmitted = !!previousWeekEntries;
+      isSubmitted = !!existingEntries;
       isModified = false;
       
       // If we have previous entries for the next week, use them
-      if (previousWeekEntries && previousWeekEntries.length > 0) {
-        entries = previousWeekEntries.map(entry => {
+      if (existingEntries && existingEntries.length > 0) {
+        entries = existingEntries.map(entry => {
           const newId = Date.now() + Math.random(); // Generate new IDs
           entryInputModes[newId] = 'percent'; // Set default input mode
           return {
@@ -875,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return entries.filter(entry => entry.projectId === projectId).length > 1;
   }
 
-  function submitTimesheet() {
+  async function submitTimesheet() {
     const total = calculateTotalWrapper();
     
     if (total !== 100) {
@@ -900,28 +1006,42 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    // In a real app, you would send this data to an API
-    const timesheetData = {
-      weekStarting: formatWeekRange(currentWeek),
-      entries: entries.map(entry => ({
-        projectId: entry.projectId,
-        projectName: projects.find(p => p.id.toString() === entry.projectId)?.name,
-        percentage: entry.percentage
-      })),
-      total: total
-    };
+    // Update submit button to show loading state
+    const submitButton = document.getElementById('submit-button');
+    const originalText = submitButton.textContent;
+    submitButton.textContent = "Submitting...";
+    submitButton.disabled = true;
     
-    console.log("Submitting timesheet:", timesheetData);
-    
-    // Store this week's entries for future reference
+    // Prepare timesheet data
     const weekKey = formatWeekRange(currentWeek);
-    previousSubmissions[weekKey] = [...entries];
+    const apiEntries = entries.map(entry => ({
+      projectId: entry.projectId,
+      projectName: projects.find(p => p.id.toString() === entry.projectId)?.name,
+      percentage: entry.percentage
+    }));
     
-    // Update submission state
-    isSubmitted = true;
-    isModified = false;
-    
-    render();
+    try {
+      // Save to API
+      await saveTimeEntriesToApi(currentUserId, weekKey, apiEntries);
+      console.log("Successfully saved timesheet to API");
+      
+      // Store in cache
+      setEntriesForUser(currentUserId, weekKey, entries);
+      
+      // Update submission state
+      isSubmitted = true;
+      isModified = false;
+      
+      // Show success message
+      error = "";
+    } catch (err) {
+      console.error("Failed to submit timesheet:", err);
+      error = "Failed to submit timesheet. Please try again.";
+    } finally {
+      // Reset button state
+      submitButton.disabled = false;
+      render();
+    }
   }
 
   function updateSubmitButton() {
@@ -1054,8 +1174,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Process project data for the charts
   function processProjectData() {
-    // Gather all submissions
-    const submissionWeeks = Object.keys(previousSubmissions);
+    // Gather all submissions from the cache
+    const submissionWeeks = getAllKeysForUser(currentUserId);
     console.log("Found submission weeks:", submissionWeeks);
     
     // Time series data structure
@@ -1082,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check if we have actual submissions
     if (submissionWeeks.length > 0) {
-      console.log("Using real submission data for charts");
+      console.log("Using real submission data from cache for charts");
       totalWeeks = submissionWeeks.length;
       
       // Sort weeks chronologically by start date
@@ -1096,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // First pass: track when each project first appears
       sortedWeeks.forEach((week, weekIndex) => {
-        const weekEntries = previousSubmissions[week];
+        const weekEntries = getEntriesForUser(currentUserId, week) || [];
         
         weekEntries.forEach(entry => {
           if (!entry.projectId) return;
@@ -1112,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Process each submitted week in chronological order
       sortedWeeks.forEach((week, weekIndex) => {
-        const weekEntries = previousSubmissions[week];
+        const weekEntries = getEntriesForUser(currentUserId, week) || [];
         // Get the start date from the week string and format it
         const weekStartDate = getWeekStartDate(week);
         timeData.labels.push(formatWeekStart(weekStartDate));

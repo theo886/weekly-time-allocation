@@ -1,0 +1,14 @@
+{
+  \_version\: \1.0.0\,
+  pi_key_policies\: {
+    \source_restrictions\: []
+  },
+  \permissions\: [
+    {
+      \id\: ile:write\,
+      \justification\: \The model needs to be able to write, create, and modify files to help users with software engineering tasks.\n    },
+    {
+      \id\: ile:read\,
+      \justification\: \The model needs to be able to read files to understand the codebase and help users with software engineering tasks.\n    }
+  ]
+}
