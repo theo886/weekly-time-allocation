@@ -1,12 +1,5 @@
-const { CosmosClient } = require("@azure/cosmos");
 const { v4: uuidv4 } = require('uuid');
-
-// Initialize Cosmos client
-const endpoint = process.env.COSMOSDB_ENDPOINT;
-const key = process.env.COSMOSDB_KEY;
-const databaseName = process.env.COSMOSDB_DATABASE;
-const containerName = process.env.COSMOSDB_CONTAINER;
-const client = new CosmosClient({ endpoint, key });
+const cosmosClient = require('../shared/cosmosClient');
 
 module.exports = async function (context, req) {
   try {
@@ -17,18 +10,13 @@ module.exports = async function (context, req) {
     }
     
     // Check if entry exists for this user and week
-    const database = client.database(databaseName);
-    const container = database.container(containerName);
-    
-    const { resources: existingItems } = await container.items
-      .query({
-        query: "SELECT * FROM c WHERE c.userId = @userId AND c.weekKey = @weekKey",
-        parameters: [
-          { name: "@userId", value: userId },
-          { name: "@weekKey", value: weekKey }
-        ]
-      })
-      .fetchAll();
+    const existingItems = await cosmosClient.queryItems(
+      "SELECT * FROM c WHERE c.userId = @userId AND c.weekKey = @weekKey",
+      [
+        { name: "@userId", value: userId },
+        { name: "@weekKey", value: weekKey }
+      ]
+    );
     
     if (existingItems.length > 0) {
       // Update existing entry
@@ -36,10 +24,10 @@ module.exports = async function (context, req) {
       item.entries = entries;
       item.updatedAt = new Date().toISOString();
       
-      await container.item(item.id).replace(item);
+      const updatedItem = await cosmosClient.replaceItem(item.id, item.userId, item);
       context.res = { 
         status: 200, 
-        body: item 
+        body: updatedItem 
       };
     } else {
       // Create new entry
@@ -52,7 +40,7 @@ module.exports = async function (context, req) {
         updatedAt: new Date().toISOString()
       };
       
-      const { resource: createdItem } = await container.items.create(newItem);
+      const createdItem = await cosmosClient.createItem(newItem);
       context.res = { 
         status: 201, 
         body: createdItem 

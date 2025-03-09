@@ -32,9 +32,22 @@ function clearCache(userId, weekKey) {
   }
 }
 
-window.cacheManager = {
-  setEntriesForUser,
-  getEntriesForUser,
-  getAllKeysForUser,
-  clearCache
-};
+// For browser environment
+if (typeof window !== 'undefined') {
+  window.cacheManager = {
+    setEntriesForUser,
+    getEntriesForUser,
+    getAllKeysForUser,
+    clearCache
+  };
+}
+
+// For Node.js environment (testing)
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    setEntriesForUser,
+    getEntriesForUser,
+    getAllKeysForUser,
+    clearCache
+  };
+}
