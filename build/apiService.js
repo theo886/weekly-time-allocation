@@ -1,5 +1,5 @@
 // apiService.js
-const API_BASE_URL = 'http://localhost:707/api'; // Point to local Azure Functions instance
+const API_BASE_URL = '/api'; // Use relative URL to work with production and local environments
 
 async function fetchAllTimeEntriesForUser(userId) {
   try {

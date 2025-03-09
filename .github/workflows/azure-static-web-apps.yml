@@ -25,10 +25,11 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Install API Dependencies
-        run: |
-          cd api
-          npm install
+      # No longer needed as we're using an external Function App
+      # - name: Install API Dependencies
+      #  run: |
+      #    cd api
+      #    npm install
            
       - name: Build And Deploy
         id: builddeploy
@@ -40,10 +41,9 @@ jobs:
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "/" # App source code path
-          api_location: "api" # API directory path
+          api_location: "" # No managed API functions - using linked function app instead
           output_location: "build" # Built app content directory
           app_build_command: "npm run build"
-          api_build_command: "npm install"
           ###### End of Repository/Build Configurations ######
  
   close_pull_request_job:
