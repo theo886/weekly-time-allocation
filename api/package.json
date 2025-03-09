@@ -1,5 +1,14 @@
 {
+  "name": "weekly-time-allocation-api",
+  "version": "1.0.0",
+  "description": "Azure Functions for Weekly Time Allocation",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests specified\""
+  },
   "dependencies": {
+    "@azure/cosmos": "^4.0.0",
+    "dotenv": "^16.4.5",
     "uuid": "^11.1.0"
   }
 }
